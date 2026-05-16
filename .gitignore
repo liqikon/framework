@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 민감 정보 (강의 자료에는 포함되면 안 되는 것들)
+.AP-key.md
+.env
+*.pem
+*.key
+secrets/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 백업 파일 (setup.sh가 만드는 백업)
+*.bak
+*.bak.*
+
+# 임시 파일
+*.tmp
+*.log

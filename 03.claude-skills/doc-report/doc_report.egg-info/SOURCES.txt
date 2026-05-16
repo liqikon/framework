@@ -1,0 +1,13 @@
+pyproject.toml
+doc_report/__init__.py
+doc_report/__main__.py
+doc_report/agent.py
+doc_report/generator.py
+doc_report/parser.py
+doc_report/styles.py
+doc_report.egg-info/PKG-INFO
+doc_report.egg-info/SOURCES.txt
+doc_report.egg-info/dependency_links.txt
+doc_report.egg-info/entry_points.txt
+doc_report.egg-info/requires.txt
+doc_report.egg-info/top_level.txt

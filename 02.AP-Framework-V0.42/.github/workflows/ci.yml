@@ -1,0 +1,128 @@
+# GitHub Actions CI/CD Pipeline
+# Week 5에서 Claude Code로 이 파일을 프로젝트에 맞게 수정합니다.
+# 기본 상태에서는 비활성화되어 있습니다.
+#
+# [실전 노트]
+# - npm install을 사용 (npm ci는 package-lock.json이 없으면 실패)
+# - Frontend는 tsc --noEmit으로 타입 체크만 (next build는 동적 라우트와 충돌 가능)
+# - 배포는 Vercel 등 외부 서비스 권장 (GitHub Pages는 정적 전용)
+# - Jest에 --forceExit 필수 (비동기 핸들러 미정리 시 무한 대기 방지)
+# - tests/ 디렉토리에서 실행 시 의존성을 별도 설치해야 함
+
+name: CI/CD Pipeline
+
+# 주석을 해제하여 활성화하세요 (Week 5)
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   pull_request:
+#     branches: [ main ]
+#   workflow_dispatch:
+
+on:
+  workflow_dispatch:  # 수동 실행만 가능 (Week 5 전까지)
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ── Backend Tests ──
+  # Week 5에서 주석 해제하여 활성화
+  # test-backend:
+  #   name: Backend Tests
+  #   runs-on: ubuntu-latest
+  #
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: ${{ env.NODE_VERSION }}
+  #
+  #   - name: Install Backend Dependencies
+  #     run: cd src/backend && npm install
+  #
+  #   - name: Install Test Dependencies
+  #     run: |
+  #       cd tests/backend
+  #       npm init -y
+  #       npm install jest supertest jsonwebtoken bcrypt express express-validator helmet cors morgan pg dotenv
+  #
+  #   - name: Run Backend Tests
+  #     run: cd tests/backend && npx jest --config jest.config.js --ci --verbose --forceExit
+  #     continue-on-error: true
+  #     timeout-minutes: 5
+  #     env:
+  #       NODE_ENV: test
+  #       JWT_SECRET: test-secret-key-for-ci
+  #       PORT: 0
+
+  # ── Frontend Check ──
+  # Week 5에서 주석 해제하여 활성화
+  # build-frontend:
+  #   name: Frontend Check
+  #   runs-on: ubuntu-latest
+  #
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: ${{ env.NODE_VERSION }}
+  #
+  #   - name: Install Frontend Dependencies
+  #     run: cd src/frontend && npm install
+  #
+  #   - name: Type Check
+  #     run: cd src/frontend && npx tsc --noEmit
+  #
+  #   - name: Lint Check
+  #     run: cd src/frontend && npx next lint
+  #     continue-on-error: true
+
+  # ── Placeholder (비활성 상태) ──
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Pipeline Ready
+      run: echo "CI/CD pipeline is ready. Configure in Week 5."
+
+  # ── Deploy (placeholder) ──
+  # Vercel/Netlify 등 외부 서비스 연동 시 활성화
+  # GitHub Pages는 정적 export만 지원하므로 동적 라우트 앱에는 부적합
+  # deploy:
+  #   name: Deploy
+  #   needs: [test-backend, build-frontend]
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #
+  #   steps:
+  #   - name: Deploy Notice
+  #     run: echo "빌드 성공 - 배포 서비스(Vercel 등) 연동 시 여기에 배포 스텝 추가"
+
+  # ── Notification (선택) ──
+  # notify:
+  #   name: Notify
+  #   needs: [test-backend, build-frontend]
+  #   runs-on: ubuntu-latest
+  #   if: always()
+  #
+  #   steps:
+  #   - name: Send Notification
+  #     if: env.N8N_WEBHOOK_URL != ''
+  #     run: |
+  #       curl -s -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+  #         -H "Content-Type: application/json" \
+  #         -d '{
+  #           "event": "ci_complete",
+  #           "repo": "${{ github.repository }}",
+  #           "ref": "${{ github.ref }}",
+  #           "sha": "${{ github.sha }}",
+  #           "backend_test": "${{ needs.test-backend.result }}",
+  #           "frontend_build": "${{ needs.build-frontend.result }}",
+  #           "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+  #         }'
+  #     env:
+  #       N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}

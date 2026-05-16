@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "doc-report"
+version = "1.0.0"
+description = "마크다운을 전문적인 기획 보고서 스타일의 Word 문서(.docx)로 변환"
+requires-python = ">=3.9"
+dependencies = [
+    "python-docx>=0.8.11",
+    "PyYAML>=6.0",
+    "lxml>=4.9.0",
+]
+
+[project.scripts]
+doc-report = "doc_report.agent:main"
+
+[tool.setuptools.packages.find]
+include = ["doc_report*"]

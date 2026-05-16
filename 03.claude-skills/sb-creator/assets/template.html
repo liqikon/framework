@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><!-- PROJECT_NAME --> - Screen Design Document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css'); }
+  * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; box-sizing: border-box; }
+  body { background: #f8f9fa; margin: 0; }
+
+  /* === TAB NAVIGATION === */
+  .tab-btn { transition: all 0.15s; background: #fff; border: none; cursor: pointer; }
+  .tab-btn:hover { background: #e9ecef; }
+  .tab-btn.active { background: #343a40; color: #fff; }
+
+  /* === SCREEN SECTIONS === */
+  .screen-section { scroll-margin-top: 48px; position: relative; z-index: 1; }
+
+  /* === SIDEBAR === */
+  .sidebar-item { padding: 10px 20px; color: #adb5bd; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 10px; border-radius: 6px; margin: 2px 8px; transition: all 0.15s; }
+  .sidebar-item:hover { background: rgba(255,255,255,0.08); color: #dee2e6; }
+  .sidebar-item.active { background: rgba(255,255,255,0.15); color: #fff; font-weight: 600; }
+  .sidebar-sub { padding-left: 44px; font-size: 12px; }
+
+  /* === STAT CARDS === */
+  .stat-card { background: #fff; border-radius: 10px; padding: 20px; border: 1px solid #dee2e6; }
+  .stat-value { font-size: 28px; font-weight: 700; color: #212529; }
+  .stat-label { font-size: 12px; color: #6c757d; margin-bottom: 4px; }
+  .stat-change { font-size: 12px; font-weight: 500; }
+  .stat-up { color: #495057; }
+  .stat-up::before { content: "▲ "; font-size: 10px; }
+  .stat-down { color: #6c757d; }
+  .stat-down::before { content: "▼ "; font-size: 10px; }
+
+  /* === BADGES (all grayscale) === */
+  .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+  .badge-dark { background: #343a40; color: #fff; }
+  .badge-mid { background: #6c757d; color: #fff; }
+  .badge-light { background: #e9ecef; color: #495057; }
+  .badge-outline { background: #fff; color: #495057; border: 1px solid #ced4da; }
+  .badge-pending { background: #e9ecef; color: #495057; border: 1px solid #ced4da; }
+  .badge-approved { background: #dee2e6; color: #212529; }
+  .badge-rejected { background: #495057; color: #fff; }
+  .badge-active { background: #343a40; color: #fff; }
+
+  /* === TABLES === */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #e9ecef; text-align: left; padding: 10px 12px; font-weight: 600; color: #495057; border-bottom: 2px solid #dee2e6; font-size: 12px; }
+  td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; color: #343a40; }
+  tr:hover td { background: #f8f9fa; }
+
+  /* === BUTTONS === */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-dark { background: #495057; color: #fff; }
+  .btn-dark:hover { background: #343a40; }
+  .btn-outline { background: #fff; color: #495057; border: 1px solid #ced4da; }
+  .btn-outline:hover { background: #f8f9fa; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* === CARDS === */
+  .card { background: #fff; border-radius: 10px; border: 1px solid #dee2e6; overflow: visible; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #e9ecef; font-weight: 600; font-size: 15px; color: #212529; }
+  .card-body { padding: 20px; }
+
+  /* === TOGGLE === */
+  .toggle { width: 40px; height: 22px; border-radius: 11px; position: relative; cursor: pointer; transition: all 0.2s; }
+  .toggle.on { background: #495057; }
+  .toggle.off { background: #ced4da; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; top: 2px; transition: all 0.2s; }
+  .toggle.on::after { left: 20px; }
+  .toggle.off::after { left: 2px; }
+
+  /* === INPUTS === */
+  .input { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 13px; outline: none; width: 100%; }
+  .input:focus { border-color: #495057; box-shadow: 0 0 0 3px rgba(73,80,87,0.1); }
+  .select { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 13px; background: #fff; outline: none; cursor: pointer; appearance: auto; }
+
+  /* === GAUGE === */
+  .gauge-ring { stroke-linecap: round; transition: stroke-dashoffset 0.5s; }
+
+  /* === META BOX === */
+  .screen-id-badge { display: inline-flex; align-items: center; padding: 3px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 6px; font-size: 12px; font-weight: 600; color: #495057; margin-right: 8px; }
+  .breadcrumb { font-size: 12px; color: #adb5bd; }
+  .breadcrumb a { color: #6c757d; text-decoration: none; }
+  .meta-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; }
+  .meta-box .meta-label { font-size: 11px; color: #adb5bd; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .meta-box .meta-value { font-size: 13px; color: #343a40; margin-top: 2px; }
+
+  /* === NUMBERED INDICATORS === */
+  .indicator { position: absolute; z-index: 9999; width: 22px; height: 22px; border-radius: 50%; background: #e67700; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; line-height: 1; box-shadow: 0 2px 6px rgba(230,119,0,0.35); }
+  .ind-container { position: relative; overflow: visible !important; }
+
+  /* === DESCRIPTION TABLE === */
+  .desc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0; }
+  .desc-table th { background: #343a40; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; border: 1px solid #343a40; }
+  .desc-table td { padding: 8px 10px; border: 1px solid #dee2e6; color: #343a40; vertical-align: top; line-height: 1.5; }
+  .desc-table tr:nth-child(even) td { background: #f8f9fa; }
+  .desc-table .num { font-weight: 700; text-align: center; width: 1%; white-space: nowrap; color: #e67700; }
+  .desc-table th:last-child, .desc-table td:last-child { width: 240px; min-width: 240px; }
+
+  /* === RIGHT PANEL LAYOUT === */
+  .screen-section:not(#cover-page) { display: grid; grid-template-columns: 1fr 400px; grid-template-rows: auto 1fr; }
+  .screen-section:not(#cover-page) .meta-box { grid-column: 1 / -1; }
+  .screen-section:not(#cover-page) .wireframe-wrap { grid-column: 1; grid-row: 2; }
+  .screen-section:not(#cover-page) .desc-wrap { grid-column: 2; grid-row: 2; position: sticky; top: 52px; max-height: calc(100vh - 60px); overflow-y: auto; margin: 0 !important; padding: 16px; border-left: 2px solid #dee2e6; background: #fff; align-self: start; }
+  .desc-wrap h3 { font-size: 14px !important; margin: 0 0 10px 0 !important; }
+
+  /* === DOWNLOAD BUTTONS === */
+  .download-btns { position: absolute; top: 60px; right: 32px; display: flex; gap: 8px; z-index: 10; }
+  .download-btns button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #ced4da; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .download-btns button:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3); }
+  .download-btns button:disabled { opacity: 0.5; cursor: wait; }
+  .download-btns .progress-text { font-size: 11px; color: #adb5bd; white-space: nowrap; align-self: center; }
+
+  /* === PRINT === */
+  @media print {
+    @page { size: landscape; margin: 8mm; }
+    .no-print, .download-btns { display: none !important; }
+    body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .screen-section { page-break-before: always; position: static !important; z-index: auto !important; scroll-margin-top: 0 !important; }
+    .screen-section:not(#cover-page) { display: grid !important; grid-template-columns: 1fr 360px !important; }
+    .desc-wrap { position: static !important; max-height: none !important; overflow: visible !important; }
+    .wireframe-wrap { overflow: hidden !important; }
+    .meta-box { margin: 0 24px !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div id="cover-page" class="screen-section active">
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, #343a40 0%, #212529 100%); position:relative;">
+    <div class="download-btns no-print">
+      <button id="btn-pdf" onclick="downloadPDF(event)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        PDF
+      </button>
+      <button id="btn-pptx" onclick="downloadPPTX(event)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        PPTX
+      </button>
+      <span class="progress-text" id="download-progress" style="display:none;"></span>
+    </div>
+    <div style="text-align:center; color:#fff; max-width:800px; padding:40px;">
+      <div style="font-size:14px; letter-spacing:4px; color:#adb5bd; margin-bottom:20px; font-weight:600;">SCREEN DESIGN DOCUMENT</div>
+      <h1 style="font-size:42px; font-weight:700; margin:0 0 12px 0; line-height:1.3;"><!-- PROJECT_TITLE --></h1>
+      <div style="width:80px; height:3px; background:#adb5bd; margin:24px auto;"></div>
+      <p style="font-size:15px; color:#adb5bd; line-height:1.8; margin-bottom:40px;">
+        <!-- PROJECT_DESCRIPTION -->
+      </p>
+      <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:30px; text-align:left; margin-bottom:40px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:13px;">
+          <div><span style="color:#6c757d;">Project</span><br><span style="color:#e9ecef; font-weight:600;"><!-- PROJECT_NAME --></span></div>
+          <div><span style="color:#6c757d;">Document Type</span><br><span style="color:#e9ecef; font-weight:600;">Screen Design (Wireframe)</span></div>
+          <div><span style="color:#6c757d;">Version</span><br><span style="color:#e9ecef; font-weight:600;"><!-- VERSION --></span></div>
+          <div><span style="color:#6c757d;">Date</span><br><span style="color:#e9ecef; font-weight:600;"><!-- DATE --></span></div>
+          <div><span style="color:#6c757d;">Total Screens</span><br><span style="color:#e9ecef; font-weight:600;"><!-- SCREEN_COUNT --></span></div>
+          <div><span style="color:#6c757d;">Status</span><br><span style="color:#e9ecef; font-weight:600;"><!-- STATUS --></span></div>
+        </div>
+      </div>
+      <h3 style="font-size:16px; font-weight:600; margin-bottom:16px; color:#ced4da;">Screen List</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; text-align:left; font-size:13px;">
+        <!-- SCREEN_LIST: Repeat for each screen -->
+        <div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-001</span> Screen Name</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB NAVIGATION ==================== -->
+<div id="tab-nav" class="no-print" style="position:fixed; top:0; left:0; right:0; z-index:1000; background:#fff; border-bottom:1px solid #dee2e6; padding:8px 16px; overflow-x:auto; white-space:nowrap; display:flex; align-items:center;">
+  <button class="tab-btn active" onclick="showScreen('cover-page',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px; font-weight:500;">Cover</button>
+  <!-- TAB_BUTTONS: Repeat for each screen -->
+  <button class="tab-btn" onclick="showScreen('scr-001',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">001 Screen Name</button>
+</div>
+
+<!-- ==================== SIDEBAR TEMPLATE ==================== -->
+<template id="sidebar-template">
+  <div style="width:260px; min-height:100%; background:#343a40; padding:20px 0; display:flex; flex-direction:column;">
+    <div style="padding:0 20px 20px 20px; border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div style="font-size:11px; color:#adb5bd; font-weight:700; letter-spacing:1px;"><!-- SIDEBAR_BRAND_SUBTITLE --></div>
+      <div style="font-size:16px; color:#f8f9fa; font-weight:700;"><!-- SIDEBAR_BRAND_TITLE --></div>
+    </div>
+    <nav style="flex:1; padding:12px 0; overflow-y:auto;">
+      <!-- SIDEBAR_ITEMS: Repeat for each screen that has a sidebar entry -->
+      <div class="sidebar-item" data-screen="scr-001">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Screen Name
+      </div>
+    </nav>
+    <div style="padding:16px 20px; border-top:1px solid rgba(255,255,255,0.08);">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:32px; height:32px; border-radius:50%; background:#6c757d; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:700;">AD</div>
+        <div>
+          <div style="font-size:13px; color:#e9ecef; font-weight:600;">Admin</div>
+          <div style="font-size:11px; color:#6c757d;">admin@example.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- ==================== EXAMPLE SCREEN (copy for each screen) ==================== -->
+<!--
+<div id="scr-001" class="screen-section">
+  <div class="meta-box" style="margin:8px 24px 0 24px;">
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+      <span class="screen-id-badge">SCR-001</span>
+      <div><span class="meta-label">Screen</span><div class="meta-value" style="font-weight:600; font-size:15px;">Screen Name</div></div>
+      <div style="margin-left:24px;"><span class="meta-label">URL</span><div class="meta-value">/path</div></div>
+      <div style="margin-left:24px;"><span class="meta-label">Description</span><div class="meta-value">Brief description of what this screen does.</div></div>
+    </div>
+  </div>
+
+  <div class="wireframe-wrap" style="display:flex; margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; min-height:calc(100vh - 140px);">
+    <div class="admin-sidebar ind-container" data-active="scr-001">
+      <div class="indicator" style="top:10px; left:10px;">1</div>
+    </div>
+    <div style="flex:1; background:#f8f9fa; padding:0;">
+      BUILD YOUR WIREFRAME HERE using components from references/components.md
+    </div>
+  </div>
+
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+    <table class="desc-table">
+      <thead><tr><th class="num">No.</th><th>Element</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>Sidebar</td><td>Navigation sidebar with menu items.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+-->
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+function showScreen(screenId, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const target = document.getElementById(screenId);
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function initSidebars() {
+  const template = document.getElementById('sidebar-template');
+  if (!template) return;
+  document.querySelectorAll('.admin-sidebar').forEach(placeholder => {
+    const clone = template.content.cloneNode(true);
+    const activeScreen = placeholder.getAttribute('data-active');
+    clone.querySelectorAll('.sidebar-item').forEach(item => {
+      if (item.getAttribute('data-screen') === activeScreen) {
+        item.classList.add('active');
+      }
+      item.addEventListener('click', () => {
+        const targetScreen = item.getAttribute('data-screen');
+        if (targetScreen) {
+          document.querySelectorAll('.tab-btn').forEach(btn => {
+            if (btn.textContent.includes(targetScreen.replace('scr-', ''))) {
+              showScreen(targetScreen, btn);
+            }
+          });
+        }
+      });
+    });
+    placeholder.appendChild(clone);
+  });
+}
+
+document.getElementById('cover-page').addEventListener('click', (e) => {
+  if (!e.target.closest('button') && !e.target.closest('.download-btns')) {
+    showScreen('scr-001', document.querySelectorAll('.tab-btn')[1]);
+  }
+});
+
+// Scroll spy: update active tab based on scroll position
+function updateActiveTab() {
+  const sections = document.querySelectorAll('.screen-section');
+  const tabs = document.querySelectorAll('.tab-btn');
+  let current = 0;
+  sections.forEach((section, idx) => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= 80) current = idx;
+  });
+  tabs.forEach(t => t.classList.remove('active'));
+  if (tabs[current]) tabs[current].classList.add('active');
+}
+
+// --- Download functions ---
+function downloadPDF(e) {
+  e.stopPropagation();
+  window.print();
+}
+
+async function downloadPPTX(e) {
+  e.stopPropagation();
+  const btn = document.getElementById('btn-pptx');
+  const progress = document.getElementById('download-progress');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Generating...';
+  progress.style.display = '';
+
+  if (!document.getElementById('spin-style')) {
+    const s = document.createElement('style');
+    s.id = 'spin-style';
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+
+  try {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await loadScript('https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js');
+
+    const pptx = new PptxGenJS();
+    pptx.defineLayout({ name: 'WIDE', width: 13.33, height: 7.5 });
+    pptx.layout = 'WIDE';
+
+    const sections = document.querySelectorAll('.screen-section');
+    const tabNav = document.getElementById('tab-nav');
+    tabNav.style.display = 'none';
+
+    for (let i = 0; i < sections.length; i++) {
+      progress.textContent = `${i + 1} / ${sections.length}`;
+      const section = sections[i];
+      const canvas = await html2canvas(section, {
+        scale: 1.5, useCORS: true, logging: false,
+        backgroundColor: i === 0 ? '#212529' : '#f8f9fa',
+        windowWidth: 1440, scrollX: 0, scrollY: 0
+      });
+      const imgData = canvas.toDataURL('image/png', 0.92);
+      const slide = pptx.addSlide();
+      slide.background = { color: i === 0 ? '212529' : 'F8F9FA' };
+      const imgW = canvas.width, imgH = canvas.height;
+      const slideW = 13.33, slideH = 7.5;
+      const ratio = Math.min(slideW / imgW, slideH / imgH);
+      const w = imgW * ratio, h = imgH * ratio;
+      slide.addImage({ data: imgData, x: (slideW - w) / 2, y: (slideH - h) / 2, w, h });
+    }
+
+    tabNav.style.display = '';
+    await pptx.writeFile({ fileName: 'Screen_Design_Document.pptx' });
+  } catch (err) {
+    console.error('PPTX generation failed:', err);
+    alert('PPTX generation failed: ' + err.message);
+    document.getElementById('tab-nav').style.display = '';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> PPTX';
+  progress.style.display = 'none';
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load: ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSidebars();
+  document.getElementById('cover-page').style.cursor = 'pointer';
+  window.addEventListener('scroll', updateActiveTab, { passive: true });
+});
+</script>
+
+</body>
+</html>
