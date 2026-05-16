@@ -282,28 +282,76 @@ Batch 4: NLM-16 ~ NLM-20  (Task agent 4)
 | 영역 | 기술 | 비고 |
 |------|------|------|
 | Frontend | **Next.js + Tailwind CSS** | 표준 |
-| Backend | **Express.js** | 표준 |
+| Backend | **Express.js** | 표준 (코드 구조) — 실제 배치는 마일스톤별로 다름 (아래 "Backend 배치 전략" 참조) |
 | Database | **PostgreSQL** | 표준 |
-| Deploy | **Vercel** | 표준 (프론트엔드 + API Routes) |
+| Deploy | **Vercel** | 표준 (프론트엔드 + API Routes 통합 배포) |
 | CI/CD | GitHub Actions | 표준 |
 | DB Hosting | Supabase (PostgreSQL + REST API) | 권장 (선택) |
 | Wiki/Knowledge | NotebookLM | 표준 |
 
 **한 줄 표기**: `Next.js + Tailwind CSS / Express.js / PostgreSQL / Vercel`
 
+### Backend 배치 전략 — 마일스톤별 (V0.42 정책)
+
+본 프레임워크는 **1인/소규모 운영을 기본 전제**로 하며, 백엔드 배치를 마일스톤 단계에 따라 단계적으로 진화시킵니다.
+
+| 단계 | API 위치 | 백엔드 배포 | `src/backend/` 폴더 |
+|------|---------|------------|-------------------|
+| **M1 ~ M4 (현재 기본값)** | **`src/frontend/app/api/*`** (Next.js Route Handlers, App Router 권장) | Vercel (Frontend + API 통합) | **빈 폴더 (`.gitkeep`)** — 미사용 |
+| **M5+ (트래픽 증가 시 분리 검토)** | `src/backend/` (Express.js) | Render / Railway / Fly.io 등 별도 호스팅 | 활성화 |
+
+#### 통합 (M1~M4) vs 분리 (M5+) 비교
+
+| 항목 | 통합 (Next.js API Routes) | 분리 (Express + Render) |
+|------|--------------------------|------------------------|
+| 1인 운영 부하 | 1개 프로젝트 관리 | 2개 프로젝트 + 2개 배포 + CORS |
+| 비용 | Vercel만 (Hobby 무료 / Pro $20) | Vercel + Render $7~ 추가 |
+| 콜드스타트 | Vercel Edge/Lambda (빠름) | Render Free는 슬립, Paid는 정상 |
+| 실행 시간 한계 | Lambda 60초 / 3008MB (Pro) | 제한 없음 |
+| 마이그레이션 용이성 | API Routes → Express로 이전 쉬움 | -- |
+
+#### M5 분리 검토 트리거
+
+다음 중 하나에 해당하면 M5 분리를 적극 검토합니다:
+- Vercel Lambda 60초 한도 초과 작업이 정상 흐름에 포함 (PDF 워터마크, 대용량 이미지 처리 등)
+- Vercel 함수 호출 수가 Pro 플랜 한도 초과
+- 워크플로우 큐/크론 등 장기 실행 프로세스 필요
+- 외부 시스템 통합으로 자체 호스팅이 더 유리한 경우
+
+#### W4 구현 자동화 시 코드 위치 지침
+
+- **M1~M4 기본값**: 모든 API 코드를 `src/frontend/app/api/*` (Next.js Route Handlers, App Router) 또는 `src/frontend/pages/api/*` (Pages Router)에 작성
+- **`src/backend/`** 폴더는 `.gitkeep`만 남기고 비워둠 (M5 분리 시 동일 자리에 Express 코드 추가)
+- **무거운 작업** (PDF 워터마크, 이미지 리사이즈 등): Vercel Pro 플랜에서 Lambda 60초 / 3GB 한도 내 처리 가능. 초과 시 M5 Express 분리 우선 검토
+- **인프라아키텍처(#10) 산출물**에서 "현재 단계 (M1~M4 통합 / M5+ 분리)"를 반드시 명시
+
 > 프로젝트별로 스택을 변경하려면 PRD.md의 "기술 스택" 항목과 본 섹션을 함께 수정하세요. 기본값을 따르는 경우 위 표를 그대로 유지합니다.
 
-## Deployment Architecture
+## Deployment Architecture (V0.42 — M1 통합 기본 / M5 분리 검토)
 
-프로젝트의 배포 구조를 여기에 기술합니다. W4 구현 단계에서 반드시 참조하세요.
+프로젝트의 배포 구조를 여기에 기술합니다. W4 구현 단계에서 반드시 참조하세요. 본 섹션은 위 "Backend 배치 전략"의 실행 디테일입니다.
 
-- Vercel Root Directory: src/frontend/
-- API 프록시: pages/api/[...path].ts -> Express 백엔드
-- DB 연결: Supabase REST API (run_query/run_mutation RPC 함수)
-- 네이티브 모듈 금지: bcrypt 대신 bcryptjs 사용 (서버리스 환경)
-- 환경변수: SUPABASE_URL, SUPABASE_KEY, JWT_SECRET, DATABASE_URL
+### M1 ~ M4: API Routes 통합 (V0.42 현재 기본값)
 
-> 이 섹션은 프로젝트의 실제 배포 환경에 맞게 수정하세요.
+- **Vercel Root Directory**: `src/frontend/`
+- **API 위치**: `src/frontend/app/api/*` (App Router 권장) 또는 `pages/api/*` (Pages Router)
+- **`src/backend/`** 폴더: 빈 폴더 (`.gitkeep` 유지) — M5에서 활성화
+- **DB 연결**: Supabase REST API (run_query/run_mutation RPC 함수) 또는 서버리스 호환 PostgreSQL 드라이버
+- **네이티브 모듈 금지**: bcrypt 대신 bcryptjs 사용 (서버리스 환경)
+- **환경변수** (Vercel 대시보드 등록): SUPABASE_URL, SUPABASE_KEY, JWT_SECRET, DATABASE_URL
+- **장점**: 1인 운영 부하 최소, Vercel 단일 배포, 콜드스타트 빠름, CORS 불필요
+
+### M5+: Express 백엔드 분리 (트래픽 증가 시 검토)
+
+- **Vercel Root Directory**: `src/frontend/` (그대로)
+- **API 프록시**: `pages/api/[...path].ts` → Express 백엔드 호출
+- **백엔드 호스팅**: Render / Railway / Fly.io 등 ($7~/월)
+- **`src/backend/`** 활성화: Express.js + 자체 라우팅 (M1~M4 코드를 자연스럽게 이전)
+- **CORS 설정**: Vercel 도메인 화이트리스트
+- **Body Parser**: Vercel '!' escaping 이슈 대응용 커스텀 파서 포함
+- **장점**: Lambda 시간/메모리 한계 없음, 장기 실행 프로세스 가능, 큐/크론 자유
+
+> 이 섹션은 프로젝트의 실제 배포 환경과 마일스톤 단계에 맞게 수정하세요. **모든 PM은 인프라아키텍처(#10) 산출물에서 "현재 단계 (M1~M4 통합 / M5+ 분리)"를 명시해야 합니다.**
 
 ## n8n 워크플로우 자산
 
