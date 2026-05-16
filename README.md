@@ -55,4 +55,4 @@ cd 00.시작하기/ && ./setup.sh    # 스킬 갱신이 있는 경우
 ## 라이선스 / 문의
 
 본 자료는 EDU-100 수강생 전용입니다. 외부 배포 금지.
-문의: Slack 교육 채널 또는 phk4568@naver.com
+문의: 카톡 rodipark 또는 phk4568@naver.com
