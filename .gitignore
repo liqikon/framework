@@ -33,3 +33,11 @@ venv/
 # 임시 파일
 *.tmp
 *.log
+
+# PPTX 백업 폴더 (강사 본인 컴퓨터에서만 보관, repo는 .md만 관리)
+01.강의교재/_pptx-backup/
+**/_pptx-backup/
+
+# PPTX 파일 (Office가 만드는 임시 락 파일 포함)
+~$*.pptx
+*.pptx
