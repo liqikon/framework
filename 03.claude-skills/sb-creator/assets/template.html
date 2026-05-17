@@ -109,11 +109,10 @@
   .desc-wrap h3 { font-size: 14px !important; margin: 0 0 10px 0 !important; }
 
   /* === DOWNLOAD BUTTONS === */
+  /* PDF only. Editable PPTX is injected by sb-creator-pptx (separate skill). */
   .download-btns { position: absolute; top: 60px; right: 32px; display: flex; gap: 8px; z-index: 10; }
   .download-btns button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #ced4da; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
   .download-btns button:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3); }
-  .download-btns button:disabled { opacity: 0.5; cursor: wait; }
-  .download-btns .progress-text { font-size: 11px; color: #adb5bd; white-space: nowrap; align-self: center; }
 
   /* === PRINT === */
   @media print {
@@ -138,11 +137,7 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
         PDF
       </button>
-      <button id="btn-pptx" onclick="downloadPPTX(event)">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        PPTX
-      </button>
-      <span class="progress-text" id="download-progress" style="display:none;"></span>
+      <!-- Editable PPTX button is injected by sb-creator-pptx after generation. -->
     </div>
     <div style="text-align:center; color:#fff; max-width:800px; padding:40px;">
       <div style="font-size:14px; letter-spacing:4px; color:#adb5bd; margin-bottom:20px; font-weight:600;">SCREEN DESIGN DOCUMENT</div>
@@ -291,79 +286,10 @@ function updateActiveTab() {
   if (tabs[current]) tabs[current].classList.add('active');
 }
 
-// --- Download functions ---
+// --- PDF download (window.print). Editable PPTX is added by sb-creator-pptx. ---
 function downloadPDF(e) {
   e.stopPropagation();
   window.print();
-}
-
-async function downloadPPTX(e) {
-  e.stopPropagation();
-  const btn = document.getElementById('btn-pptx');
-  const progress = document.getElementById('download-progress');
-  btn.disabled = true;
-  btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Generating...';
-  progress.style.display = '';
-
-  if (!document.getElementById('spin-style')) {
-    const s = document.createElement('style');
-    s.id = 'spin-style';
-    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
-    document.head.appendChild(s);
-  }
-
-  try {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    await loadScript('https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js');
-
-    const pptx = new PptxGenJS();
-    pptx.defineLayout({ name: 'WIDE', width: 13.33, height: 7.5 });
-    pptx.layout = 'WIDE';
-
-    const sections = document.querySelectorAll('.screen-section');
-    const tabNav = document.getElementById('tab-nav');
-    tabNav.style.display = 'none';
-
-    for (let i = 0; i < sections.length; i++) {
-      progress.textContent = `${i + 1} / ${sections.length}`;
-      const section = sections[i];
-      const canvas = await html2canvas(section, {
-        scale: 1.5, useCORS: true, logging: false,
-        backgroundColor: i === 0 ? '#212529' : '#f8f9fa',
-        windowWidth: 1440, scrollX: 0, scrollY: 0
-      });
-      const imgData = canvas.toDataURL('image/png', 0.92);
-      const slide = pptx.addSlide();
-      slide.background = { color: i === 0 ? '212529' : 'F8F9FA' };
-      const imgW = canvas.width, imgH = canvas.height;
-      const slideW = 13.33, slideH = 7.5;
-      const ratio = Math.min(slideW / imgW, slideH / imgH);
-      const w = imgW * ratio, h = imgH * ratio;
-      slide.addImage({ data: imgData, x: (slideW - w) / 2, y: (slideH - h) / 2, w, h });
-    }
-
-    tabNav.style.display = '';
-    await pptx.writeFile({ fileName: 'Screen_Design_Document.pptx' });
-  } catch (err) {
-    console.error('PPTX generation failed:', err);
-    alert('PPTX generation failed: ' + err.message);
-    document.getElementById('tab-nav').style.display = '';
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> PPTX';
-  progress.style.display = 'none';
-}
-
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = resolve;
-    s.onerror = () => reject(new Error('Failed to load: ' + src));
-    document.head.appendChild(s);
-  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

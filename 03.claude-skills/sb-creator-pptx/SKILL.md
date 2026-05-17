@@ -20,6 +20,7 @@ HTML로 작성된 화면설계서·와이어프레임·스토리보드를 PowerP
 | **글꼴 처리** | "맑은 고딕" 매핑 (Mac/Windows 양 플랫폼 호환), monospace → Consolas |
 | **단일행 자동 감지** | 짧은 한글(배지·버튼·H1)이 자릿수 단위로 잘리지 않도록 `wrap: false` |
 | **폭 버퍼** | Pretendard 대비 Malgun Gothic 폭 차이 보정 (단일행 +15%, 다행 +8%) |
+| **버튼 배치** | `auto` (기본): HTML에 `.download-btns` 영역이 있으면 표지 우측 상단 PDF 버튼 옆에 삽입(`cover` 모드). 없으면 화면 우상단 고정 버튼(`fixed` 모드)로 fallback. `--placement` 인자로 강제 가능. |
 
 ## 워크플로우
 
@@ -29,9 +30,14 @@ HTML로 작성된 화면설계서·와이어프레임·스토리보드를 PowerP
    - 다른 셀렉터면 `--selector` 인자로 전달
 3. **주입 실행**: `scripts/inject.py` 실행
    - 백업 자동 생성 (`<원본>.bak.html`)
-   - 기존 PPTX 버튼·스크립트 있으면 최신 버전으로 교체
-   - 없으면 `<body>` 끝부분에 다운로드 버튼 + 스크립트 삽입
-4. **사용 안내**: 사용자가 브라우저로 HTML 열고 우상단 "PPTX 다운로드" 버튼 클릭
+   - 기존 PPTX 버튼·스크립트(현재 마커 + 레거시 마커 모두) 있으면 최신 버전으로 교체
+   - 버튼 배치는 `auto` 감지:
+     - 대상 HTML에 `<div class="download-btns ...">`가 있으면 그 안에 PDF 버튼 옆으로 삽입
+     - 없으면 `<body>` 끝부분에 고정 우상단 버튼으로 삽입
+   - 스크립트는 항상 `<body>` 끝부분에 삽입
+4. **사용 안내**:
+   - cover 모드: 표지 우측 상단의 PDF 버튼 옆 "PPTX" 클릭
+   - fixed 모드: 화면 우상단 고정 "PPTX 다운로드" 클릭
 
 ## 사용법
 
@@ -50,6 +56,10 @@ python3 ~/.claude/skills/sb-creator-pptx/scripts/inject.py <대상.html> --outpu
 
 # 백업 비활성화
 python3 ~/.claude/skills/sb-creator-pptx/scripts/inject.py <대상.html> --no-backup
+
+# 버튼 배치 강제 (auto | cover | fixed). 기본 auto (download-btns 감지)
+python3 ~/.claude/skills/sb-creator-pptx/scripts/inject.py <대상.html> --placement cover
+python3 ~/.claude/skills/sb-creator-pptx/scripts/inject.py <대상.html> --placement fixed
 ```
 
 ## 변환 시 주의사항
@@ -77,11 +87,12 @@ python3 ~/.claude/skills/sb-creator-pptx/scripts/inject.py <대상.html> --no-ba
 
 ```
 sb-creator-pptx/
-├── SKILL.md                    # 본 문서
+├── SKILL.md                          # 본 문서
 ├── scripts/
-│   ├── inject.py               # HTML 주입 도구 (Python 3)
-│   ├── pptx-export.js          # 변환 JavaScript 본체 (템플릿)
-│   └── button-snippet.html     # 다운로드 버튼 HTML 스니펫
+│   ├── inject.py                     # HTML 주입 도구 (Python 3)
+│   ├── pptx-export.js                # 변환 JavaScript 본체 (템플릿)
+│   ├── button-snippet-cover.html     # 표지 영역 내부 삽입용 버튼 (PDF 옆자리)
+│   └── button-snippet-fixed.html     # 화면 우상단 고정 wrapper 버튼 (fallback)
 └── references/
-    └── usage-examples.md       # 적용 예시
+    └── usage-examples.md             # 적용 예시
 ```
