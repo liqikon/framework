@@ -41,3 +41,8 @@ venv/
 # PPTX 파일 (Office가 만드는 임시 락 파일 포함)
 ~$*.pptx
 *.pptx
+
+# 강의 교재 _draft 폴더 (주차별 순차 공개 정책 — 매주 release 시 _draft → ./로 이동)
+# W2~W5 교안 등 사전 작업 자료는 _draft에서 작성/수정 후 배포일에 mv로 공개
+01.강의교재/_draft/
+**/_draft/
