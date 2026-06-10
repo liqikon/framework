@@ -36,7 +36,11 @@ async function downloadPPTX(e) {
   const htmlOrigCss = document.documentElement.style.cssText;
 
   try {
-    await loadScript('https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js');
+    await loadScript([
+      'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js',
+      'https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js',
+      'https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js',
+    ], () => typeof PptxGenJS !== 'undefined');
 
     const pptx = new PptxGenJS();
     const SLIDE_W = __SLIDE_WIDTH__;
@@ -460,13 +464,33 @@ function sbpptxFontName(ff) {
   return '맑은 고딕';
 }
 
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = resolve;
-    s.onerror = () => reject(new Error('Failed to load: ' + src));
-    document.head.appendChild(s);
-  });
+// 여러 CDN을 순차 시도하는 폴백 로더.
+//   - src: 단일 URL 또는 URL 배열 (앞에서부터 차례로 시도)
+//   - isReady: (선택) 로드 성공 판정 함수. 라이브러리 전역이 실제로 정의됐는지 확인
+//     (사내/교육망 프록시가 200 + 빈/에러 본문을 반환하는 경우까지 방어)
+function loadScript(src, isReady) {
+  const urls = Array.isArray(src) ? src : [src];
+  const ready = () => (typeof isReady === 'function' ? isReady() : true);
+  function tryLoad(i) {
+    return new Promise((resolve, reject) => {
+      if (i >= urls.length) { reject(new Error('모든 CDN에서 라이브러리 로드 실패: ' + urls.join(', '))); return; }
+      const url = urls[i];
+      if (ready()) { resolve(); return; }
+      const existing = document.querySelector(`script[src="${url}"]`);
+      if (existing && existing.dataset._sbpptxLoaded === '1' && ready()) { resolve(); return; }
+      const s = existing || document.createElement('script');
+      s.src = url;
+      s.onload = () => {
+        s.dataset._sbpptxLoaded = '1';
+        if (ready()) resolve();
+        else tryLoad(i + 1).then(resolve, reject); // 200이지만 라이브러리 미정의 → 다음 CDN
+      };
+      s.onerror = () => {
+        if (s.parentNode) s.parentNode.removeChild(s); // 실패한 태그 제거 후 다음 CDN
+        tryLoad(i + 1).then(resolve, reject);
+      };
+      if (!existing) document.head.appendChild(s);
+    });
+  }
+  return tryLoad(0);
 }

@@ -43,6 +43,8 @@ Copy `assets/template.html` as the starting point, then:
 
 Place `<div class="indicator" style="top:Ypx;left:Xpx;">N</div>` elements inside `.ind-container` wrappers. Each indicator number must correspond to a row in the Description table.
 
+> **Author every wireframe so it survives PPTX conversion.** The Step 5 PptxGenJS exporter walks the live DOM and maps each element to a native shape/text box — it does NOT understand gradients, `aspect-ratio`, `calc()`, nested fl/grid centering, or text split across child spans. Wireframes built with raw fl/grid stacks render fine in HTML but come out garbled in PPTX (shifted boxes, "only the inner span" text, invisible light-on-light text). Follow [references/pptx-safe-authoring.md](references/pptx-safe-authoring.md) — solid colors, fixed-px absolute placement, single text leaves. This is mandatory for mobile device-frame mockups and any pixel-positioned layout.
+
 ### 4. Verify
 
 - All tab buttons scroll to the correct section
@@ -90,9 +92,26 @@ Font: **Pretendard** (Google Fonts CDN). Fallback: system sans-serif.
 - **Print CSS**: `@page { size: landscape; }`, screens get `page-break-before: always`.
 - **PPTX export**: Provided by the `sb-creator-pptx` skill (injected in Step 5). It dynamically loads `PptxGenJS@3.12.0` and converts DOM elements to native shapes/text (editable in PowerPoint). The sb-creator template itself emits **no** PPTX button — never bake one in or you'll end up with duplicates after injection.
 
+## PPTX-Safe Authoring (read before building any pixel-positioned or mobile wireframe)
+
+The editable-PPTX exporter (Step 5) converts the rendered DOM to native PowerPoint shapes. It has hard limitations — author around them or the PPTX comes out broken even when the HTML looks perfect:
+
+| Don't | Why it breaks PPTX | Do instead |
+|-------|--------------------|------------|
+| `background: linear-gradient(...)` | Exporter falls back to the first color only | Solid `background:#RRGGBB` |
+| `aspect-ratio: 3/4` | Not measured → zero/wrong height | Fixed `width`/`height` in px |
+| `calc(...)` in positions | Not evaluated | Literal px values |
+| Nested flex/grid for centering | Box offsets drift | `position:absolute` + fixed `left/top` inside a sized parent |
+| Text split across children, e.g. `rodi-book<span>AX</span>` | Only the inner child renders | One text node per element |
+| Light text on translucent `rgba(...,0.05)` card | Blends to near-white → invisible | Solid card color + readable text color |
+
+For mobile app mockups, use the **device-frame pattern**: a fixed-size `.device` box with header / body / bottom-bar children placed by absolute px coordinates, and indicators positioned with literal px (not `calc()`) relative to the `.ind-container`. Full CSS + a worked example are in [references/pptx-safe-authoring.md](references/pptx-safe-authoring.md).
+
 ## Component Reference
 
 See [references/components.md](references/components.md) for reusable HTML patterns: sidebar, header bar, stat cards, data tables, filter bars, form groups, badges, toggles, buttons, chat bubbles, and more.
+
+For mobile / pixel-positioned wireframes, see [references/pptx-safe-authoring.md](references/pptx-safe-authoring.md) — the PPTX-safe device-frame CSS and component atoms (header, bottom bar, cover image, buttons, cards, inputs, banners).
 
 ## Template
 
