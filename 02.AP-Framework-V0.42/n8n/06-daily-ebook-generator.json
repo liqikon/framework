@@ -1,0 +1,217 @@
+{
+  "name": "06 | 전자책 콘텐츠 자동 생성 & 사이트 배포",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "e0507348-fda5-40ce-a9dc-71caf82260f0",
+      "name": "매일 오전 9시 실행",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-656, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://YOUR_SUPABASE_PROJECT.supabase.co/rest/v1/books?select=id,slug,category_id,title&order=id.asc",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "YOUR_SUPABASE_PUBLISHABLE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_PUBLISHABLE_KEY" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "10c2d14a-1ac1-4781-963f-92249f465392",
+      "name": "Supabase - 기존 도서 목록 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-448, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 콘텐츠 확보 계획\nconst BOOK_PLAN = [\n  { category: '개발', level: '입문', topic: '1인 개발자의 SaaS 런칭 가이드', keywords: 'SaaS, 솔로 창업, 제품 출시, MVP' },\n  { category: '개발', level: '실무', topic: 'Next.js 풀스택 실무', keywords: 'Next.js, React, 풀스택, 웹개발' },\n  { category: '개발', level: '실무', topic: 'Supabase로 빠른 백엔드 구축', keywords: 'Supabase, PostgreSQL, 백엔드, API' },\n  { category: '개발', level: '심화', topic: 'API 설계와 운영의 기술', keywords: 'REST API, OpenAPI, 설계, 운영' },\n  { category: '개발', level: '실무', topic: '서버리스 아키텍처 입문', keywords: '서버리스, Lambda, Vercel, 배포' },\n  { category: '개발', level: '실무', topic: '스타트업 개발팀 운영법', keywords: 'CTO, 팀 관리, 코드 리뷰, 애자일' },\n  { category: '마케팅', level: '입문', topic: '1인 스타트업 그로스 해킹', keywords: '그로스해킹, 사용자 획득, 바이럴, 퍼널' },\n  { category: '마케팅', level: '실무', topic: '콘텐츠 마케팅 실전 전략', keywords: '콘텐츠마케팅, 블로그, 유튜브, 뉴스레터' },\n  { category: '마케팅', level: '실무', topic: 'SEO 완전정복 (한국 시장)', keywords: 'SEO, 검색엔진, 네이버, 구글' },\n  { category: '마케팅', level: '심화', topic: '제품 주도 성장 (PLG) 입문', keywords: 'PLG, 제품주도성장, 온보딩, 활성화' },\n  { category: '마케팅', level: '입문', topic: '린 스타트업 마케팅 실전', keywords: '린스타트업, MVP, 고객 검증, 피봇' },\n  { category: '세무/법무', level: '입문', topic: '1인 사업자 세금 완전 정복', keywords: '종합소득세, 부가가치세, 경비처리, 절세' },\n  { category: '세무/법무', level: '실무', topic: '스타트업 계약서 핵심 정리', keywords: '계약서, 근로계약, 투자계약, NDA' },\n  { category: '세무/법무', level: '입문', topic: '개인사업자 vs 법인 설립 가이드', keywords: '법인설립, 개인사업자, 세금, 책임' },\n  { category: '세무/법무', level: '입문', topic: '지식재산권과 특허 입문', keywords: '특허, 상표, 저작권, IP 전략' },\n  { category: '세무/법무', level: '심화', topic: '스타트업 투자계약 이해하기', keywords: 'VC, 텀시트, 지분희석, 우선주' },\n  { category: '디자인', level: '입문', topic: '1인 창업자를 위한 UX 디자인', keywords: 'UX, 사용자경험, 와이어프레임, 프로토타입' },\n  { category: '디자인', level: '실무', topic: 'Figma 실무 마스터', keywords: 'Figma, UI 디자인, 컴포넌트, 오토레이아웃' },\n  { category: '디자인', level: '실무', topic: '브랜드 아이덴티티 만들기', keywords: '브랜딩, 로고, 컬러시스템, 타이포그래피' },\n  { category: '디자인', level: '입문', topic: '랜딩 페이지 전환율 극대화', keywords: '랜딩페이지, CTA, A/B테스트, 전환율' },\n  { category: 'AI', level: '실무', topic: 'Cursor AI로 빠른 개발하기', keywords: 'Cursor, AI 코딩, 코드 생성, 생산성' },\n  { category: 'AI', level: '실무', topic: 'Make(Integromat) 자동화 입문', keywords: 'Make, 자동화, 노코드, 워크플로우' },\n  { category: 'AI', level: '심화', topic: 'RAG 기반 AI 챗봇 구축하기', keywords: 'RAG, LLM, 벡터DB, 챗봇' },\n  { category: 'HRD', level: '실무', topic: 'AI 시대의 팀 역량 강화 전략', keywords: 'HRD, 직무교육, AI 리터러시, 조직학습' }\n];\n\nconst existingCount = $input.all().length;\nconst nextIndex = Math.max(0, existingCount - 6) % BOOK_PLAN.length;\nconst plan = BOOK_PLAN[nextIndex] || BOOK_PLAN[0];\n\nconst nextId = existingCount + 1;\nconst nextSlug = 'b' + nextId;\nconst variants = ['a', 'b', 'c', 'd', 'e'];\nconst coverVariant = variants[nextId % variants.length];\nconst priceMap = { '입문': 17000, '실무': 19000, '심화': 27000 };\nconst price = priceMap[plan.level] || 19000;\nconst today = new Date();\nconst dateStr = today.toISOString().split('T')[0];\n\nreturn [{ json: { plan, nextSlug, nextId, coverVariant, price, dateStr, existingCount } }];"
+      },
+      "id": "dd47301c-9029-491f-807d-e70d5f3a0e58",
+      "name": "다음 생성 도서 결정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-240, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=YOUR_GEMINI_API_KEY",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: '당신은 1인 스타트업 실무 전자책을 집필하는 전문 저자입니다.\\n\\n다음 주제로 전자책 콘텐츠를 생성해주세요:\\n주제: ' + $json.plan.topic + '\\n카테고리: ' + $json.plan.category + '\\n난이도: ' + $json.plan.level + '\\n핵심 키워드: ' + $json.plan.keywords + '\\n대상 독자: 1인 스타트업 창업자, 솔로프리너\\n\\n반드시 아래 JSON 형식으로만 응답하세요. 마크다운 코드블록(```)을 절대 사용하지 마세요. 순수 JSON만 출력하세요:\\n{\\n  \"title\": \"책 제목 (30자 이내)\",\\n  \"author\": \"저자명 (한국인 이름)\",\\n  \"description\": \"도서 소개 (200자 내외)\",\\n  \"toc\": [\"Chapter 1: ...\", \"Chapter 2: ...\", \"Chapter 3: ...\", \"Chapter 4: ...\", \"Chapter 5: ...\"],\\n  \"sample_chapter\": \"Chapter 1 핵심 내용 (500자 내외, 실무 팁 포함)\",\\n  \"pages\": 200,\\n  \"tags\": [\"태그1\", \"태그2\", \"태그3\"]\\n}' }] }], generationConfig: { maxOutputTokens: 16384, temperature: 0.7 } }) }}",
+        "options": {}
+      },
+      "id": "62afd25e-8207-4bc6-ac56-39441286ed3c",
+      "name": "Gemini API - 전자책 콘텐츠 생성",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-16, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gemini 응답 파싱 (2.5 Flash thinking 모델 대응)\nconst aiResponse = $input.first().json;\nconst parts = (aiResponse.candidates?.[0]?.content?.parts) || [];\nconst responsePart = parts.find(p => !p.thought) || parts[parts.length - 1] || {};\nconst rawText = responsePart.text || '';\n\nlet bookData;\ntry {\n  bookData = JSON.parse(rawText);\n} catch(e) {\n  const blockMatch = rawText.match(/```(?:json)?\\s*([\\s\\S]*?)```/);\n  const objMatch = rawText.match(/\\{[\\s\\S]*\\}/);\n  const extracted = blockMatch ? blockMatch[1].trim() : (objMatch ? objMatch[0] : null);\n  try {\n    bookData = JSON.parse(extracted || '{}');\n  } catch(e2) {\n    bookData = {};\n  }\n}\nif (!bookData || typeof bookData !== 'object') bookData = {};\nbookData.title = bookData.title || '파싱 오류';\nbookData.author = bookData.author || '미상';\nbookData.description = bookData.description || '';\nbookData.toc = Array.isArray(bookData.toc) ? bookData.toc : [];\nbookData.sample_chapter = bookData.sample_chapter || '';\nbookData.pages = Number(bookData.pages) || 200;\nbookData.tags = Array.isArray(bookData.tags) ? bookData.tags : [];\n\nconst meta = $('다음 생성 도서 결정').first().json;\n\nconst tocText = (bookData.toc || []).map((ch, i) => (i+1) + '. ' + ch).join('\\n');\nconst markdownContent = [\n  '# ' + bookData.title,\n  '',\n  '**저자**: ' + bookData.author,\n  '**카테고리**: ' + meta.plan.category,\n  '**난이도**: ' + meta.plan.level,\n  '**페이지**: ' + bookData.pages + 'p',\n  '**가격**: ' + meta.price.toLocaleString('ko-KR') + '원',\n  '**슬러그**: ' + meta.nextSlug,\n  '**생성일**: ' + meta.dateStr,\n  '**태그**: ' + (bookData.tags || []).join(', '),\n  '',\n  '---',\n  '',\n  '## 도서 소개',\n  '',\n  bookData.description || '',\n  '',\n  '---',\n  '',\n  '## 목차',\n  '',\n  tocText,\n  '',\n  '---',\n  '',\n  '## 샘플 챕터',\n  '',\n  bookData.sample_chapter || ''\n].join('\\n');\n\nconst base64Content = btoa(unescape(encodeURIComponent(markdownContent)));\nconst safeName = (bookData.title || 'book').replace(/[^가-힣a-zA-Z0-9]/g, '_');\nconst fileName = meta.nextSlug + '_' + safeName + '.md';\n\nconst supabasePayload = {\n  slug: meta.nextSlug,\n  title: bookData.title,\n  author: bookData.author,\n  price_krw: meta.price,\n  cover_variant: meta.coverVariant,\n  pages: Number(bookData.pages) || 200,\n  level: meta.plan.level,\n  category_id: meta.plan.category,\n  tags: bookData.tags || [],\n  description: bookData.description || '',\n  toc: (bookData.toc || []).join('\\n'),\n  is_new: true,\n  published_at: new Date().toISOString(),\n  rating: 0,\n  review_count: 0\n};\n\nreturn [{ json: { bookData, meta, base64Content, fileName, supabasePayload } }];"
+      },
+      "id": "5ba6c3db-b9d0-4a87-afd5-c5e3f96576c5",
+      "name": "콘텐츠 파싱 & 파일 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [208, 400]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.github.com/repos/rodipark/rodi-book4/contents/06.%EC%BD%98%ED%85%90%EC%B8%A0/' + encodeURIComponent($json.fileName) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_GITHUB_PAT" },
+            { "name": "Accept", "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version", "value": "2022-11-28" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac9c3676-3f9f-42df-9148-e4117e634c0d",
+      "name": "GitHub - 기존 파일 sha 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [416, 400],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ 'https://api.github.com/repos/rodipark/rodi-book4/contents/06.%EC%BD%98%ED%85%90%EC%B8%A0/' + encodeURIComponent($('콘텐츠 파싱 & 파일 준비').first().json.fileName) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_GITHUB_PAT" },
+            { "name": "Accept", "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version", "value": "2022-11-28" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.assign({ message: '[W6] 콘텐츠 자동생성 - ' + $('콘텐츠 파싱 & 파일 준비').first().json.bookData.title + ' (' + $('콘텐츠 파싱 & 파일 준비').first().json.meta.nextSlug + ')', content: $('콘텐츠 파싱 & 파일 준비').first().json.base64Content, branch: 'main' }, $input.first().json.sha ? { sha: $input.first().json.sha } : {})) }}",
+        "options": {}
+      },
+      "id": "70521735-8069-4aa1-abed-6ffb6a10a153",
+      "name": "GitHub - 06.콘텐츠 폴더에 파일 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [608, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_SUPABASE_PROJECT.supabase.co/rest/v1/books",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates,return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($('콘텐츠 파싱 & 파일 준비').first().json.supabasePayload) }}",
+        "options": {}
+      },
+      "id": "ad48d328-bcd1-4ed3-83a1-748be7c74469",
+      "name": "Supabase - 신규 도서 DB 등록",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [816, 400],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const githubResult = $('GitHub - 06.콘텐츠 폴더에 파일 저장').first().json;\nconst supabaseItems = $('Supabase - 신규 도서 DB 등록').all();\nconst supabaseResult = supabaseItems.length > 0 ? supabaseItems[0].json : null;\nconst meta = $('콘텐츠 파싱 & 파일 준비').first().json;\n\nconst githubOk = !!(githubResult && githubResult.content && githubResult.content.name);\nconst supabaseOk = !!(Array.isArray(supabaseResult) ? supabaseResult[0] : supabaseResult && supabaseResult.id);\n\nreturn [{ json: {\n  success: githubOk && supabaseOk,\n  book_title: meta.bookData.title,\n  slug: meta.meta.nextSlug,\n  category: meta.meta.plan.category,\n  level: meta.meta.plan.level,\n  price: meta.meta.price,\n  github_ok: githubOk,\n  github_url: githubOk ? githubResult.content.html_url : '',\n  supabase_ok: supabaseOk,\n  supabase_id: Array.isArray(supabaseResult) ? (supabaseResult[0] && supabaseResult[0].id) : (supabaseResult && supabaseResult.id),\n  site_url: 'https://rodi-book4.vercel.app/books/' + meta.meta.nextSlug,\n  generated_at: new Date().toISOString()\n} }];"
+      },
+      "id": "c9d47a37-89cb-41f1-a41a-fd347eb529d8",
+      "name": "결과 요약",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1008, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: ':books: *전자책 자동 생성 완료*', blocks: [ { type: 'header', text: { type: 'plain_text', text: ':books: 오늘의 전자책 생성 완료' } }, { type: 'section', fields: [ { type: 'mrkdwn', text: '*제목*\\n' + $json.book_title }, { type: 'mrkdwn', text: '*카테고리*\\n' + $json.category + ' / ' + $json.level }, { type: 'mrkdwn', text: '*슬러그*\\n' + $json.slug }, { type: 'mrkdwn', text: '*상태*\\nGitHub: ' + ($json.github_ok ? '✅' : '❌') + '  DB: ' + ($json.supabase_ok ? '✅' : '❌') } ] }, { type: 'actions', elements: [ { type: 'button', text: { type: 'plain_text', text: '사이트 확인' }, url: $json.site_url }, { type: 'button', text: { type: 'plain_text', text: 'GitHub 파일' }, url: $json.github_url } ] } ] }) }}",
+        "options": {}
+      },
+      "id": "d7f344c7-3c24-4506-939b-6dd7badaf89b",
+      "name": "Slack - 생성 완료 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1216, 400]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "매일 오전 9시 실행": {
+      "main": [[{ "node": "Supabase - 기존 도서 목록 조회", "type": "main", "index": 0 }]]
+    },
+    "Supabase - 기존 도서 목록 조회": {
+      "main": [[{ "node": "다음 생성 도서 결정", "type": "main", "index": 0 }]]
+    },
+    "다음 생성 도서 결정": {
+      "main": [[{ "node": "Gemini API - 전자책 콘텐츠 생성", "type": "main", "index": 0 }]]
+    },
+    "Gemini API - 전자책 콘텐츠 생성": {
+      "main": [[{ "node": "콘텐츠 파싱 & 파일 준비", "type": "main", "index": 0 }]]
+    },
+    "콘텐츠 파싱 & 파일 준비": {
+      "main": [[{ "node": "GitHub - 기존 파일 sha 조회", "type": "main", "index": 0 }]]
+    },
+    "GitHub - 기존 파일 sha 조회": {
+      "main": [[{ "node": "GitHub - 06.콘텐츠 폴더에 파일 저장", "type": "main", "index": 0 }]]
+    },
+    "GitHub - 06.콘텐츠 폴더에 파일 저장": {
+      "main": [[{ "node": "Supabase - 신규 도서 DB 등록", "type": "main", "index": 0 }]]
+    },
+    "Supabase - 신규 도서 DB 등록": {
+      "main": [[{ "node": "결과 요약", "type": "main", "index": 0 }]]
+    },
+    "결과 요약": {
+      "main": [[{ "node": "Slack - 생성 완료 알림", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b76e521c-2a53-4bcc-b21f-c84ee49fd00b",
+  "meta": {
+    "instanceId": "7f81c71188e0fe702423c70a87341f964685ec0419fbe71a9c535800f72657c3"
+  },
+  "id": "dv6xsGZdngm_qhK7bezLQ",
+  "tags": []
+}

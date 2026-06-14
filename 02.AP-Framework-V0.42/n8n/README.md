@@ -21,6 +21,7 @@
 | 03 | 03-deploy-notification.json | 배포 완료 -> Slack 알림 | Webhook (GitHub Actions 호출) | 배포 상태 Slack 전송 | W5 |
 | 04 | 04-slack-ai-github-agent.json | PM 어시스턴트 (Chat UI) | n8n Chat UI | AI Agent로 프로젝트 현황 질의 | W5 |
 | 05 | 05-slack-pm-agent.json | Slack PM 어시스턴트 | Slack 슬래시 명령 | Slack에서 AI Agent로 GitHub 질의 | W5 |
+| 06 | 06-daily-ebook-generator.json | 전자책 자동 생성 & 배포 | 매일 오전 9시 (Cron) | Claude AI 콘텐츠 생성 → GitHub 저장 → Supabase DB 등록 → Slack 알림 | W6 |
 
 ## 사전 설정 필요 항목
 
@@ -30,6 +31,7 @@
 | GitHub | PAT (Header Auth 형식) | n8n > Credentials > HTTP Header Auth | 04, 05 |
 | Slack | Incoming Webhook URL | 워크플로우 내 HTTP Request 노드에 직접 입력 | 01, 02, 03 |
 | Google Gemini | API Key | n8n > Credentials > Google Gemini API | 04, 05 |
+| Google Gemini API | API Key | URL 쿼리 파라미터 `?key=` 로 직접 입력 | 06 |
 
 > Slack Incoming Webhook URL은 n8n Credential이 아닙니다. 워크플로우 내 HTTP Request 노드에 직접 입력합니다.
 

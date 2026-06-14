@@ -1,0 +1,107 @@
+{
+  "name": "검수 자동화 | 시나리오 업로드 → 대상 사이트 검수 → Slack (n8n Cloud)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "시나리오 기반 검수 실행",
+        "formDescription": "대상 사이트 URL과 테스트시나리오.md를 넣고 제출하면, 시나리오대로 검수하고 Slack으로 결과를 보냅니다.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "대상 사이트 URL",
+              "fieldType": "text",
+              "placeholder": "https://내앱.vercel.app",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "scenario",
+              "fieldType": "file",
+              "acceptFileTypes": ".md,.txt,.markdown",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1111111-1111-4111-8111-111111111111",
+      "name": "검수 시나리오 업로드",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -360,
+        360
+      ],
+      "webhookId": "scenario-checkup-form"
+    },
+    {
+      "parameters": {
+        "jsCode": "// [강의 배포용 / n8n Cloud] 시나리오 업로드 → 대상 사이트 검수 → Slack 리포트\n// 수강생은 코드를 고치지 않는다. 폼에 (1) 대상 사이트 URL (2) 테스트시나리오.md 만 넣으면 된다.\n//\n// n8n Cloud는 로컬 파일/ localhost 에 접근할 수 없으므로:\n//  - 시나리오: 폼으로 .md 업로드 (이 노드가 텍스트로 읽음)\n//  - 대상:     폼에 입력한 공개 URL (예: https://내앱.vercel.app)\n//\n// 이 노드는 .md의 <!-- N8N-TEST-MATRIX --> 표를 파싱해 케이스를 만들고,\n// 대상 사이트에 호출하여 상태코드+키워드로 Pass/Fail을 판정한다.\n\nconst item = $input.first();\n\n// --- 1) 폼 입력에서 대상 URL 확보 (http(s) 로 시작하는 값 자동 인식) ---\nconst form = item.json || {};\nlet BASE = Object.values(form).find(v => typeof v === 'string' && /^https?:\\/\\//i.test(String(v).trim()));\nif (!BASE) throw new Error('폼에 대상 사이트 URL(https:// 로 시작)을 입력하세요.');\nBASE = String(BASE).trim().replace(/\\/+$/, '');\n\n// --- 2) 업로드된 .md 텍스트 확보 (바이너리 키 자동 탐지) ---\nlet md = '';\nconst binKeys = Object.keys(item.binary || {});\nif (binKeys.length && this.helpers && this.helpers.getBinaryDataBuffer) {\n  const buf = await this.helpers.getBinaryDataBuffer(0, binKeys[0]);\n  md = buf.toString('utf8');\n} else {\n  md = form.data || form.text || Object.values(form).find(v => typeof v === 'string' && v.length > 80) || '';\n}\nif (!md) throw new Error('업로드된 .md 텍스트를 읽지 못했습니다. 폼에서 .md 파일을 첨부했는지 확인하세요.');\n\n// --- 3) N8N-TEST-MATRIX 구간 추출 + 표 파싱 ---\nconst block = md.match(/N8N-TEST-MATRIX:START([\\s\\S]*?)N8N-TEST-MATRIX:END/);\nif (!block) throw new Error('업로드한 .md에서 N8N-TEST-MATRIX 구간을 찾지 못했습니다.');\n\nconst cells = (line) => line.split('|').slice(1, -1).map(s => s.trim());\nconst isSep = (arr) => arr.every(x => /^:?-+:?$/.test(x));\nconst rows = block[1].split('\\n').map(l => l.trim()).filter(l => l.startsWith('|'));\nconst header = cells(rows[0]);\nconst idx = (n) => header.indexOf(n);\n\nconst CASES = [];\nfor (let i = 1; i < rows.length; i++) {\n  const c = cells(rows[i]);\n  if (isSep(c)) continue;\n  const get = (n) => { const k = idx(n); return k >= 0 ? (c[k] || '') : ''; };\n  const bodyRaw = get('body');\n  let body;\n  if (bodyRaw && bodyRaw !== '-') { try { body = JSON.parse(bodyRaw); } catch (e) { body = undefined; } }\n  const kw = get('keyword');\n  CASES.push({\n    tc: get('TC'), name: get('name'),\n    method: (get('method') || 'GET').toUpperCase(),\n    path: get('path'), body,\n    expectStatus: parseInt(get('expectStatus'), 10) || 200,\n    keyword: (kw && kw !== '-') ? kw : '',\n  });\n}\nif (CASES.length === 0) throw new Error('매트릭스에서 실행할 케이스를 파싱하지 못했습니다.');\n\n// --- 4) 케이스별 호출 + 판정 ---\nconst __HTTP = (this && this.helpers && this.helpers.httpRequest)\n  ? this.helpers.httpRequest.bind(this.helpers)\n  : (typeof $helpers !== 'undefined' && $helpers.httpRequest ? $helpers.httpRequest.bind($helpers) : null);\nif (!__HTTP) throw new Error('n8n httpRequest 헬퍼를 찾을 수 없습니다.');\n\nconst results = [];\nfor (const c of CASES) {\n  let status = 0, bodyText = '', errMsg = '';\n  try {\n    const opt = {\n      method: c.method,\n      url: encodeURI(BASE + c.path),\n      returnFullResponse: true,\n      json: true,\n      timeout: 15000,\n      headers: { 'Content-Type': 'application/json' },\n    };\n    if (c.body !== undefined) opt.body = c.body;\n    const res = await __HTTP(opt);\n    status = res.statusCode || 200;\n    bodyText = typeof res.body === 'string' ? res.body : JSON.stringify(res.body || {});\n  } catch (err) {\n    const __resp = err.response || (err.cause && err.cause.response) || {};\n    const __m = String(err.message || '').match(/status code (\\d{3})/);\n    status = __resp.status || __resp.statusCode || err.statusCode || err.httpCode || (__m ? Number(__m[1]) : 0);\n    const eb = __resp.data ?? __resp.body ?? (err.cause && err.cause.response && err.cause.response.data) ?? (err.context && err.context.data) ?? '';\n    bodyText = typeof eb === 'string' ? eb : JSON.stringify(eb || {});\n    errMsg = err.message || '';\n  }\n  const statusOk = status === c.expectStatus;\n  // n8n httpRequest는 4xx/5xx 응답 본문을 넘기지 않는다.\n  // → 본문이 있으면(주로 2xx) 키워드까지 검증, 본문이 없으면(에러 응답) 상태코드로 판정\n  const bodyAvailable = bodyText.length > 0;\n  const keywordChecked = !!c.keyword && bodyAvailable;\n  const keywordOk = !c.keyword || (bodyAvailable ? bodyText.includes(c.keyword) : statusOk);\n  const pass = statusOk && keywordOk;\n  let reason = 'OK';\n  if (!pass) {\n    if (status === 0) reason = '연결 실패 — 대상 URL/네트워크 확인 (' + BASE + ')';\n    else if (!statusOk) reason = '상태 ' + status + ' (기대 ' + c.expectStatus + ')';\n    else reason = \"키워드 '\" + c.keyword + \"' 미검출\";\n    if (errMsg) reason += ' / ' + errMsg;\n  }\n  results.push({ tc: c.tc, name: c.name, request: c.method + ' ' + c.path, expectStatus: c.expectStatus, actualStatus: status, pass, reason });\n}\n\nconst total = results.length;\nconst passed = results.filter(r => r.pass).length;\nconst failed = total - passed;\nconst passRate = Math.round((passed / total) * 1000) / 10;\nconst verdict = failed === 0 ? 'PASS' : 'FAIL';\nconst ranAt = new Date().toISOString();\n\n// --- 5) 케이스별 개별 Slack 메시지 (+ 마지막 요약 1건) ---\n// Code가 여러 아이템을 반환하면 다음 Slack 노드가 아이템당 1번씩 실행된다 → 케이스별 개별 메시지\nconst out = [];\n\nfor (const r of results) {\n  const icon = r.pass ? ':white_check_mark:' : ':x:';\n  const head = icon + ' *' + r.tc + '* ' + r.name + '  —  ' + (r.pass ? 'PASS' : 'FAIL');\n  const detail = '`' + r.request + '`  ·  기대 ' + r.expectStatus + ' / 실제 ' + r.actualStatus + (r.pass ? '' : '\\n> ' + r.reason);\n  out.push({ json: {\n    kind: 'case', tc: r.tc, pass: r.pass, baseUrl: BASE,\n    slackPayload: {\n      text: '[' + (r.pass ? 'PASS' : 'FAIL') + '] ' + r.tc + ' ' + r.name,\n      blocks: [\n        { type: 'section', text: { type: 'mrkdwn', text: head + '\\n' + detail } },\n        { type: 'context', elements: [{ type: 'mrkdwn', text: '대상 ' + BASE + ' · ' + ranAt }] },\n      ],\n    },\n  } });\n}\n\n// 마지막 요약 메시지 (필요 없으면 이 블록 삭제)\nout.push({ json: {\n  kind: 'summary', verdict, total, passed, failed, passRate, baseUrl: BASE, ranAt,\n  slackPayload: {\n    text: '검수 요약 ' + verdict + ' — ' + passed + '/' + total + ' pass',\n    blocks: [\n      { type: 'header', text: { type: 'plain_text', text: '검수 요약 ' + verdict, emoji: true } },\n      { type: 'section', fields: [\n        { type: 'mrkdwn', text: '*결과*\\n' + (verdict === 'PASS' ? ':white_check_mark: PASS' : ':rotating_light: FAIL') },\n        { type: 'mrkdwn', text: '*Pass / Fail*\\n' + passed + ' / ' + failed + '  (' + passRate + '%)' },\n        { type: 'mrkdwn', text: '*대상*\\n' + BASE },\n        { type: 'mrkdwn', text: '*케이스 수*\\n' + total + '건' },\n      ] },\n    ],\n  },\n} });\n\nreturn out;\n"
+      },
+      "id": "e2222222-2222-4222-8222-222222222222",
+      "name": "시나리오 파싱 + 검수 실행",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.slackPayload) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1100
+            }
+          }
+        }
+      },
+      "id": "e3333333-3333-4333-8333-333333333333",
+      "name": "Slack - 검수 결과 리포트",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        360
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "검수 시나리오 업로드": {
+      "main": [
+        [
+          {
+            "node": "시나리오 파싱 + 검수 실행",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "시나리오 파싱 + 검수 실행": {
+      "main": [
+        [
+          {
+            "node": "Slack - 검수 결과 리포트",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "tags": []
+}
