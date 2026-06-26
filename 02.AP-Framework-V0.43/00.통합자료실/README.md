@@ -88,7 +88,7 @@ nlm source content <source_id>
 - NLM 동기화 자료: `NLM-XX_제목요약.md` (XX: 2자리 번호, 01부터 시작)
 - 지원 형식: `.md`, `.pdf`, `.txt`, `.docx`, `.csv` (NotebookLM 지원 형식 기준)
 
-### NLM 동기화 파일 구조 (V0.41 도입 · V0.42 유지)
+### NLM 동기화 파일 구조 (V0.41 도입 · V0.43 유지)
 
 `참고자료/` 폴더에 NotebookLM 소스를 `NLM-XX_제목요약.md` 형식으로 저장합니다.
 P-104 프롬프트 실행 시 자동으로 생성되며, 파일 헤더에 원본 URL과 소스 유형을 명시합니다.

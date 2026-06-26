@@ -1,15 +1,15 @@
-# AP-Framework Project Rules (V0.42)
+# AP-Framework Project Rules (V0.43)
 
-<!-- 이 파일은 AP-Framework V0.42 템플릿입니다. P-101 실행 시 프로젝트 루트에 CLAUDE.md로 복사됩니다. -->
+<!-- 이 파일은 AP-Framework V0.43 템플릿입니다. P-101 실행 시 프로젝트 루트에 CLAUDE.md로 복사됩니다. -->
 
 ## Role
 당신은 한국 IT PM(프로젝트 매니저)입니다. 모든 산출물은 한국어로 작성합니다.
 
-## Project Initialization (V0.42)
-- 이 프로젝트는 AP-Framework V0.42를 사용합니다
-- AP-Framework-V0.42/ 폴더는 **읽기 전용 템플릿**입니다. 절대 수정하지 마세요
+## Project Initialization (V0.43)
+- 이 프로젝트는 AP-Framework V0.43를 사용합니다
+- AP-Framework-V0.43/ 폴더는 **읽기 전용 템플릿**입니다. 절대 수정하지 마세요
 - 모든 작업 산출물은 **프로젝트 루트** 폴더에 저장합니다 (AP-Framework 폴더 밖)
-- 프롬프트 참조: AP-Framework-V0.42/prompts/ 폴더 참조
+- 프롬프트 참조: AP-Framework-V0.43/prompts/ 폴더 참조
 - 프로젝트 초기화가 안 되어 있다면 `P-101`(prompts/week1-초기화.md)을 먼저 실행하세요
 
 ## Project Context
@@ -154,7 +154,7 @@ graph TD
 
 > #18 제안서는 핵심 17단계와 별도의 영업 트랙 확장 산출물입니다. 완료보고서(#17)의 "15개 이상 산출물" 집계에는 포함하지 않습니다.
 
-## Gate-Check Rules (V0.41 도입 · V0.42 유지)
+## Gate-Check Rules (V0.41 도입 · V0.43 유지)
 
 산출물 생성 전 반드시 전제조건을 확인하여, 순서를 건너뛰는 것을 방지합니다.
 
@@ -239,7 +239,7 @@ graph TD
   - 보고서/차트 활용: 산출물 기반 요약, FAQ, 진행 현황 생성
   - 팀 온보딩: 신규 참여자가 프로젝트 맥락을 빠르게 파악
 
-### NLM 양방향 동기화 (V0.41 도입 · V0.42 유지)
+### NLM 양방향 동기화 (V0.41 도입 · V0.43 유지)
 
 NotebookLM의 모든 소스를 로컬 `00.통합자료실/참고자료/`에 마크다운 파일로 동기화합니다.
 이를 통해 NotebookLM에 등록된 웹 참조자료, 프로젝트 문서, PDF 등을 로컬에서도 Git으로 관리하고 Claude Code가 직접 참조할 수 있습니다.
@@ -318,7 +318,7 @@ Batch 4: NLM-16 ~ NLM-20  (Task agent 4)
 - 프로젝트 서비스 키/URL 정보는 `.AP-key.md`에 관리합니다
 - `.AP-key.md`는 민감 정보를 포함하므로, 공개 저장소에는 .gitignore에 추가하세요
 
-## Tech Stack (V0.42 기본값 — 표준 스택)
+## Tech Stack (V0.43 기본값 — 표준 스택)
 
 > 본 프레임워크의 **기본 기술 스택**은 다음과 같습니다. 모든 산출물(시스템정의서, 인프라아키텍처, 디자인스타일가이드, 코드 생성)은 이 스택을 기준으로 작성됩니다.
 
@@ -334,7 +334,7 @@ Batch 4: NLM-16 ~ NLM-20  (Task agent 4)
 
 **한 줄 표기**: `Next.js + Tailwind CSS / Express.js / PostgreSQL / Vercel`
 
-### Backend 배치 전략 — 마일스톤별 (V0.42 정책)
+### Backend 배치 전략 — 마일스톤별 (V0.43 정책)
 
 본 프레임워크는 **1인/소규모 운영을 기본 전제**로 하며, 백엔드 배치를 마일스톤 단계에 따라 단계적으로 진화시킵니다.
 
@@ -370,11 +370,11 @@ Batch 4: NLM-16 ~ NLM-20  (Task agent 4)
 
 > 프로젝트별로 스택을 변경하려면 PRD.md의 "기술 스택" 항목과 본 섹션을 함께 수정하세요. 기본값을 따르는 경우 위 표를 그대로 유지합니다.
 
-## Deployment Architecture (V0.42 — M1 통합 기본 / M5 분리 검토)
+## Deployment Architecture (V0.43 — M1 통합 기본 / M5 분리 검토)
 
 프로젝트의 배포 구조를 여기에 기술합니다. W4 구현 단계에서 반드시 참조하세요. 본 섹션은 위 "Backend 배치 전략"의 실행 디테일입니다.
 
-### M1 ~ M4: API Routes 통합 (V0.42 현재 기본값)
+### M1 ~ M4: API Routes 통합 (V0.43 현재 기본값)
 
 - **Vercel Root Directory**: `src/frontend/`
 - **API 위치**: `src/frontend/app/api/*` (App Router 권장) 또는 `pages/api/*` (Pages Router)

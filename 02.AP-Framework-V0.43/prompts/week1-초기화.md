@@ -1,9 +1,9 @@
 # Week 1 프롬프트: 프로젝트 초기화
 
-> V0.3 신규, V0.41 NLM 양방향 동기화, V0.42 표준 기술 스택 기본값 확정. 프로젝트 시작 시 1회 실행하여 루트 레벨에 작업 환경을 구성합니다.
+> V0.3 신규, V0.41 NLM 양방향 동기화, V0.43 표준 기술 스택 기본값 확정. 프로젝트 시작 시 1회 실행하여 루트 레벨에 작업 환경을 구성합니다.
 > AP-Framework 폴더는 읽기 전용 템플릿으로 유지됩니다.
 >
-> **V0.42 표준 기술 스택**: `Next.js + Tailwind CSS / Express.js / PostgreSQL / Vercel`
+> **V0.43 표준 기술 스택**: `Next.js + Tailwind CSS / Express.js / PostgreSQL / Vercel`
 > 모든 PRD와 산출물은 이 스택을 기본값으로 작성합니다.
 
 ---
@@ -11,7 +11,7 @@
 ## P-101. 프로젝트 초기화 (Project Scaffold)
 
 ```
-"AP-Framework-V0.42 폴더를 참조하여 프로젝트를 초기화해줘.
+"AP-Framework-V0.43 폴더를 참조하여 프로젝트를 초기화해줘.
 
 1. 프로젝트 루트에 다음 폴더/파일을 생성해줘:
    - 00.통합자료실/ (하위 5개 폴더 + README.md 복사)
@@ -31,11 +31,11 @@
 6. .gitignore를 프로젝트 루트에 복사해줘
 
 주의사항:
-- AP-Framework-V0.42/ 폴더 내용은 수정하지 마세요 (읽기 전용 템플릿)
+- AP-Framework-V0.43/ 폴더 내용은 수정하지 마세요 (읽기 전용 템플릿)
 - 이미 루트에 동일 파일이 있으면 덮어쓰지 마세요"
 ```
 
-**입력**: AP-Framework-V0.42/ (템플릿 폴더)
+**입력**: AP-Framework-V0.43/ (템플릿 폴더)
 **출력**: 프로젝트 루트에 전체 폴더 구조 생성
 **참고**: 이 프롬프트는 프로젝트 시작 시 1회만 실행합니다
 
@@ -48,7 +48,7 @@
 
 다음 항목을 채워줘:
 - 프로젝트명, 고객사/조직, 팀 규모, 기간, 예산
-- 기술 스택: 'Next.js + Tailwind CSS / Express.js / PostgreSQL / Vercel' (V0.42 표준 스택 기본값)
+- 기술 스택: 'Next.js + Tailwind CSS / Express.js / PostgreSQL / Vercel' (V0.43 표준 스택 기본값)
 - 프로젝트 목표 (2-3문장)
 - 핵심 기능 (3-5개)
 - 대상 사용자
@@ -139,7 +139,7 @@ Batch 3: NLM-11 ~ NLM-15  (Task agent 3)
 
 ```
 MyProject/                         # 프로젝트 루트
-  AP-Framework-V0.42/               # 읽기 전용 (템플릿 + prompts)
+  AP-Framework-V0.43/               # 읽기 전용 (템플릿 + prompts)
   00.통합자료실/                    # 작업 복사본
     고객자료/
     정책자료/

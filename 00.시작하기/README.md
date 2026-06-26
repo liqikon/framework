@@ -1,7 +1,7 @@
 # AP-Lecture 시작하기
 
 > EDU-100 Agent PM 실무 트레이닝 — 수강생 환경 셋업 가이드
-> 표준 환경: Antigravity + Claude Code 플러그인 / AP-Framework V0.42
+> 표준 환경: Antigravity + Claude Code 플러그인 / AP-Framework V0.43
 
 ---
 
@@ -113,7 +113,7 @@ AP-Lecture/
 │   ├── W3교안_기획자동화.md
 │   ├── W4교안_구현자동화.md
 │   └── W5교안_검수자동화.md
-├── 02.AP-Framework-V0.42/          # 프레임워크 템플릿 (P-101 참조)
+├── 02.AP-Framework-V0.43/          # 프레임워크 템플릿 (P-101 참조)
 │   ├── CLAUDE.template.md
 │   ├── PRD.template.md
 │   ├── .progress.md
@@ -231,7 +231,7 @@ cd 00.시작하기/
 환경 셋업이 완료되면:
 
 1. [01.강의교재/W1교안_기초이론_환경구축.md](../01.강의교재/W1교안_기초이론_환경구축.md) 정독
-2. 본인 GitHub에서 **AP-Framework V0.42 Template repo** 생성 준비 (W1 Block C에서 진행)
+2. 본인 GitHub에서 **AP-Framework V0.43 Template repo** 생성 준비 (W1 Block C에서 진행)
 3. 본인이 만들 프로젝트 주제 한 줄 정리 (W1 Block C에서 사용)
 
 수업에서 만나요!

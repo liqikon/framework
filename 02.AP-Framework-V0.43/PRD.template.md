@@ -13,7 +13,7 @@
 | 팀 규모     | [예: PM 1, 기획자 1, 디자이너 2, 개발자 4] |
 | 기간        | [예: 4개월 (16주)]                         |
 | 예산        | [예: 3억원]                                |
-| 기술 스택   | **Next.js + Tailwind CSS / Express.js / PostgreSQL / Vercel** (V0.42 표준) |
+| 기술 스택   | **Next.js + Tailwind CSS / Express.js / PostgreSQL / Vercel** (V0.43 표준) |
 
 ## 프로젝트 목표
 

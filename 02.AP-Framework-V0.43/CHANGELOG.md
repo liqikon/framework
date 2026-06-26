@@ -24,6 +24,22 @@ AP-Framework 버전 변경 이력입니다.
 
 ---
 
+## [0.43.0] - 2026-06-26
+
+> 영업·마케팅 확장 트랙 추가: 콘텐츠 / 마케팅 / 세일즈 / 제안서. Document Chaining 핵심 17단계 이후 Go-To-Market 산출물로 확장.
+
+### Added
+- `06.콘텐츠/README.md`: 블로그·쇼츠·상세페이지·FAQ·뉴스레터 등 콘텐츠 자산 트랙 (기획 산출물 파생)
+- `07.마케팅/README.md`: 마케팅 전략·퍼널·캠페인·채널 운영·성과 리포트 트랙
+- `08.세일즈/README.md`: 피치덱·견적·세일즈 스크립트·계약/SOW 초안 등 세일즈 자료 트랙 (09.제안서 연계)
+- `09.제안서/제안서.md`: 고객 제출용 사업 제안서 템플릿 (Document Chain #18 · 확장 산출물)
+
+### Changed
+- 폴더명: `AP-Framework-V0.42/` -> `AP-Framework-V0.43/`
+- 버전 표기 V0.42 -> V0.43 전체 갱신: `CLAUDE.template.md` (헤더·주석·Project Initialization·Tech Stack·배치/배포 정책 섹션), `.progress.md`, `PRD.template.md`, `00.통합자료실/README.md`, `02.기획문서/서비스기획서.md`, `03.구현문서/시스템정의서.md`, `01.관리문서/완료보고서.md`, `prompts/week1-초기화.md`, 루트 `README.md`, `00.시작하기/` (README·setup.sh)
+
+---
+
 ## [0.42.0] - 2026-05-16
 
 > 표준 기술 스택 기본값 확정: Next.js + Tailwind CSS / Express.js / PostgreSQL / Vercel.
@@ -219,6 +235,7 @@ AP-Framework 버전 변경 이력입니다.
 | 0.4.0 | PRD 중심 전환 (README -> PRD.md, 트리거 시나리오) | 완료 |
 | 0.41.0 | NLM 양방향 동기화 (NotebookLM -> 로컬 자동 다운로드) | 완료 |
 | 0.42.0 | 표준 기술 스택 기본값 확정 (Next.js + Tailwind / Express.js / PostgreSQL / Vercel) | 완료 |
+| 0.43.0 | 영업·마케팅 확장 트랙 추가 (콘텐츠 / 마케팅 / 세일즈 / 제안서) | 완료 |
 | 0.5.0 | 산업별 프리셋 추가 (금융, 커머스, 교육, 헬스케어) | 계획 |
 | 0.6.0 | 다국어 지원 (영문 템플릿) | 계획 |
 | 1.0.0 | 정식 릴리스 (문서 검증 완료, 교육 과정 3회 이상 운영) | 계획 |
