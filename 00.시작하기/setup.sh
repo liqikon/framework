@@ -9,7 +9,7 @@
 #   ./setup.sh
 # =====================================================================
 # 이 스크립트가 자동으로 해주는 것:
-#   1. ~/.claude/skills/ 에 강의용 스킬 22개 복사
+#   1. ~/.claude/skills/ 에 강의용 스킬 복사 (03.claude-skills 폴더 전체)
 #   2. uv 패키지 매니저 설치 (Python 3.11+ 관리용)
 #   3. notebooklm-cli (nlm) 설치 (P-104 NLM 동기화에 필요)
 #   4. Claude Code MCP 서버 등록 (notebooklm-mcp)
@@ -54,10 +54,12 @@ fi
 
 mkdir -p ~/.claude/skills
 
-# 강의 스킬 22개를 ~/.claude/skills/ 로 복사
+# 강의 스킬을 ~/.claude/skills/ 로 복사
+# 주의: macOS/BSD cp 는 소스 경로 끝에 '/' 가 있으면 디렉토리 자체가 아니라
+#       내부 파일만 복사(평탄화)하므로, "${skill_dir%/}" 로 슬래시를 제거한다.
 for skill_dir in "$SKILLS_SRC"/*/; do
     skill_name=$(basename "$skill_dir")
-    cp -R "$skill_dir" ~/.claude/skills/
+    cp -R "${skill_dir%/}" ~/.claude/skills/
 done
 
 SKILL_COUNT_DST=$(ls ~/.claude/skills/ | wc -l | tr -d ' ')
@@ -113,13 +115,14 @@ echo ""
 echo "[5/5] 설치 결과 검증"
 echo "------------------------------------------------------"
 
+# 검증 목표는 소스 폴더의 실제 스킬 개수와 동기화한다 (하드코딩 금지)
 INSTALLED_SKILLS=$(ls ~/.claude/skills/ 2>/dev/null | wc -l | tr -d ' ')
-echo "  설치된 스킬 수:    ${INSTALLED_SKILLS}개 (목표: 22개)"
+echo "  설치된 스킬 수:    ${INSTALLED_SKILLS}개 (목표: ${SKILL_COUNT_SRC}개)"
 
-if [ "$INSTALLED_SKILLS" = "22" ]; then
+if [ "$INSTALLED_SKILLS" = "$SKILL_COUNT_SRC" ]; then
     echo "  스킬 설치:         OK"
 else
-    echo "  스킬 설치:         경고 (목표 22개와 다름)"
+    echo "  스킬 설치:         경고 (목표 ${SKILL_COUNT_SRC}개와 다름)"
 fi
 
 UV_VER=$([ -x "$HOME/.local/bin/uv" ] && "$HOME/.local/bin/uv" --version 2>/dev/null || echo "미설치")
