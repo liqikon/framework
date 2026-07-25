@@ -1,13 +1,17 @@
 """유연한 헤더 자동 매핑.
 
 프로젝트마다 시나리오 엑셀의 컬럼명이 달라도(예: '테스트ID' vs 'TC ID' vs '케이스번호',
-'입력(사용자 질의)' vs '질의' vs 'Query') 표준 4개 필드로 자동 매핑한다.
+'입력(사용자 질의)' vs '질의' vs 'Query') 표준 필드로 자동 매핑한다.
 
 표준 필드:
-  id         - 테스트/케이스 식별자  (필수)
-  query      - 챗봇에 입력할 사용자 질의 (필수)
-  scenario   - 시나리오/그룹 ID (선택, 요약 집계용)
-  checkpoint - 검증 포인트/기대 결과 (선택, 없으면 응답 길이로 판정)
+  id           - 테스트/케이스 식별자  (필수)
+  query        - 입력창에 넣을 질의   ┐ 둘 중 하나는 반드시 있어야 한다
+  steps        - 수행절차 DSL         ┘ (query=챗봇 모드, steps=UI 멀티스텝 모드)
+  scenario     - 시나리오/그룹 ID (선택, 요약 집계용)
+  checkpoint   - 검증 포인트 (선택, 키워드 룰 판정에 사용)
+  expected     - 기대 결과 (선택, 리터럴 대조 판정에 사용)
+  url          - 케이스별 대상 화면 URL (선택)
+  precondition - 사전조건 DSL (선택, 본 절차 전에 실행)
 
 config.COLUMN_ALIASES_EXTRA 로 프로젝트별 별칭을 추가할 수 있다.
 """
@@ -31,16 +35,36 @@ BASE_ALIASES = {
     ],
     "checkpoint": [
         "검증포인트", "검증기준", "검증항목", "검증", "확인사항", "판정기준", "합격기준",
-        "기대결과정상응답", "기대결과", "기대값", "expected", "expectedresult",
         "checkpoint", "acceptance", "criteria",
+    ],
+    "expected": [
+        "기대결과", "기대결과정상응답", "기대값", "예상결과", "정상응답", "출력기대값",
+        "expected", "expectedresult", "expectedvalue", "then",
+    ],
+    "url": [
+        "대상url", "화면url", "테스트url", "url", "화면주소", "주소", "화면경로",
+        "링크주소", "endpoint", "path", "화면",
+    ],
+    "steps": [
+        "수행절차", "테스트절차", "실행절차", "재현절차", "수행단계", "테스트단계",
+        "수행방법", "조작절차", "절차", "steps", "teststeps", "procedure", "actions", "when",
+    ],
+    "precondition": [
+        "사전조건", "전제조건", "선행조건", "사전준비", "사전작업",
+        "precondition", "pre", "given", "setup",
     ],
 }
 
 # 너무 짧아 오탐 위험이 큰 별칭은 '완전 일치'일 때만 인정
-EXACT_ONLY = {"id", "tc", "no", "번호", "순번", "seq", "group", "input", "query", "분류", "그룹"}
+EXACT_ONLY = {
+    "id", "tc", "no", "번호", "순번", "seq", "group", "input", "query", "분류", "그룹",
+    "url", "주소", "path", "화면", "절차", "steps", "actions", "when", "then", "pre",
+    "given", "setup", "expected",
+}
 
-REQUIRED = ["id", "query"]   # 없으면 에러
-OPTIONAL = ["scenario", "checkpoint"]
+REQUIRED = ["id"]                     # 없으면 에러
+REQUIRED_ANY = [("query", "steps")]   # 각 묶음에서 최소 1개는 있어야 함
+OPTIONAL = ["scenario", "checkpoint", "expected", "url", "precondition"]
 
 
 def _norm(s):
@@ -118,19 +142,24 @@ def match(headers, extra_aliases=None):
 def header_quality(headers, extra_aliases=None):
     """헤더 후보의 '시나리오 헤더다움' 점수 (헤더 행 자동 탐지용)."""
     mapping, total = match(headers, extra_aliases)
-    found_required = sum(1 for f in REQUIRED if mapping.get(f))
+    found = sum(1 for f in REQUIRED if mapping.get(f))
+    found += sum(1 for grp in REQUIRED_ANY if any(mapping.get(f) for f in grp))
     # 필수 필드가 다 잡힐수록 가산
-    return found_required * 1000 + total, mapping
+    return found * 1000 + total, mapping
 
 
 def resolve(headers, extra_aliases=None):
     """매핑을 확정하고 필수 누락 시 에러. Returns mapping dict."""
     mapping, _ = match(headers, extra_aliases)
     missing = [f for f in REQUIRED if not mapping.get(f)]
+    for grp in REQUIRED_ANY:
+        if not any(mapping.get(f) for f in grp):
+            missing.append(" 또는 ".join(grp))
     if missing:
         raise ValueError(
             "필수 컬럼 매핑 실패: " + ", ".join(missing) +
             f"\n  헤더: {headers}\n"
+            "  → 질의 컬럼(챗봇형) 또는 수행절차 컬럼(UI형) 중 하나는 있어야 합니다.\n"
             "  → config.py 의 COLUMN_ALIASES_EXTRA 에 별칭을 추가하세요. 예:\n"
             "    COLUMN_ALIASES_EXTRA = {'query': ['우리프로젝트질의컬럼명']}"
         )

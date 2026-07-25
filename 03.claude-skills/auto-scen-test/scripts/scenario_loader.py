@@ -52,7 +52,9 @@ def load_cases(path=None, verbose=True):
 
     if verbose:
         print("[헤더 매핑] " + " | ".join(
-            f"{f}→'{mapping.get(f)}'" for f in ["id", "scenario", "query", "checkpoint"]
+            f"{f}→{repr(mapping[f]) if mapping.get(f) else '(없음)'}"
+            for f in ["id", "scenario", "query", "steps", "checkpoint", "expected",
+                      "url", "precondition"]
         ))
 
     out = []
