@@ -374,8 +374,12 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
           valign: valign,
           margin: 0,
           wrap: !isSingleLine,
-          shrinkText: true,
-          autoFit: true,
+          // autofit 은 반드시 '하나만' 지정할 것.
+          // shrinkText(→<a:normAutofit/>) 와 autoFit(→<a:spAutoFit/>) 를 동시에 주면
+          // OOXML 스키마(EG_TextAutofit, maxOccurs=1) 위반이라 PowerPoint 가
+          // "파일의 콘텐츠에 문제가 있습니다 / 복구" 대화상자를 띄운다.
+          // 도형 크기는 DOM 좌표로 고정해야 하므로 텍스트를 줄이는 shrink 를 쓴다.
+          fit: 'shrink',
           isTextBox: true,
         });
       } catch (err) { /* ignore */ }
@@ -468,28 +472,46 @@ function sbpptxFontName(ff) {
 //   - src: 단일 URL 또는 URL 배열 (앞에서부터 차례로 시도)
 //   - isReady: (선택) 로드 성공 판정 함수. 라이브러리 전역이 실제로 정의됐는지 확인
 //     (사내/교육망 프록시가 200 + 빈/에러 본문을 반환하는 경우까지 방어)
-function loadScript(src, isReady) {
+function loadScript(src, isReady, timeoutMs) {
   const urls = Array.isArray(src) ? src : [src];
   const ready = () => (typeof isReady === 'function' ? isReady() : true);
+  const TIMEOUT = timeoutMs || 15000;
+
   function tryLoad(i) {
     return new Promise((resolve, reject) => {
-      if (i >= urls.length) { reject(new Error('모든 CDN에서 라이브러리 로드 실패: ' + urls.join(', '))); return; }
-      const url = urls[i];
       if (ready()) { resolve(); return; }
-      const existing = document.querySelector(`script[src="${url}"]`);
-      if (existing && existing.dataset._sbpptxLoaded === '1' && ready()) { resolve(); return; }
-      const s = existing || document.createElement('script');
-      s.src = url;
-      s.onload = () => {
-        s.dataset._sbpptxLoaded = '1';
-        if (ready()) resolve();
-        else tryLoad(i + 1).then(resolve, reject); // 200이지만 라이브러리 미정의 → 다음 CDN
-      };
-      s.onerror = () => {
-        if (s.parentNode) s.parentNode.removeChild(s); // 실패한 태그 제거 후 다음 CDN
+      if (i >= urls.length) {
+        reject(new Error('모든 CDN에서 라이브러리 로드 실패: ' + urls.join(', ')));
+        return;
+      }
+      const url = urls[i];
+      // 이전 시도로 남은 동일 src 태그는 반드시 제거한다.
+      // 이미 실행된 script 는 src 를 다시 대입해도 재요청/onload 가 발생하지 않아,
+      // 재사용하면 Promise 가 영원히 settle 되지 않고 버튼이 '생성 중...' 으로 고착된다.
+      document.querySelectorAll('script[data-sbpptx="1"]').forEach(el => {
+        if (el.getAttribute('src') === url) el.remove();
+      });
+
+      const s = document.createElement('script');
+      s.dataset.sbpptx = '1';
+      let settled = false;
+      const advance = () => {          // 실패/타임아웃 → 다음 CDN
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
         tryLoad(i + 1).then(resolve, reject);
       };
-      if (!existing) document.head.appendChild(s);
+      // 응답 없이 매달리는 프록시 방어 — 어떤 경우에도 Promise 는 반드시 settle 된다
+      const timer = setTimeout(advance, TIMEOUT);
+      s.onload = () => {
+        if (settled) return;
+        clearTimeout(timer);
+        if (ready()) { settled = true; resolve(); }
+        else advance();                // 200 이지만 라이브러리 미정의 → 다음 CDN
+      };
+      s.onerror = advance;
+      s.src = url;
+      document.head.appendChild(s);
     });
   }
   return tryLoad(0);
