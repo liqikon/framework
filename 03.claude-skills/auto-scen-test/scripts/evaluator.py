@@ -37,7 +37,9 @@ RULES = {
     "숫자": lambda r: bool(re.search(r"\d", r["text"])),
     "출처": lambda r: "출처" in r["text"] or "기준일" in r["text"],
     "멀티턴": lambda r: "?" in r["text"] or "선택" in r["text"],
-    "결과 없음": lambda r: "없음" in r["text"] or "찾을 수 없" in r["text"],
+    "결과 없음": lambda r: bool(
+        re.search(r"없습니다|없음|찾을 수 없|0건|결과가 없", r["text"])
+    ),
     "거절": lambda r: "제공하지 않" in r["text"] or "어렵습니다" in r["text"] or "안내가 어렵" in r["text"],
     "오류 메시지": lambda r: bool(re.search(r"오류|에러|실패|error", r["text"], re.I)),
 
