@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<style>
+  :root {
+    --bg: var(--figma-color-bg, #fff);
+    --bg2: var(--figma-color-bg-secondary, #f5f5f5);
+    --txt: var(--figma-color-text, #1e1e1e);
+    --txt2: var(--figma-color-text-secondary, #888);
+    --border: var(--figma-color-border, #d0d0d0);
+    --brand: var(--figma-color-bg-brand, #18a0fb);
+    --on-brand: var(--figma-color-text-onbrand, #fff);
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Inter, 'Pretendard', -apple-system, sans-serif;
+    margin: 0; padding: 14px; font-size: 12px;
+    background: var(--bg); color: var(--txt);
+  }
+  h1 { font-size: 13px; margin: 0 0 4px; color: var(--txt); }
+  p.desc { margin: 0 0 12px; color: var(--txt2); font-size: 11px; line-height: 1.5; }
+  .filebtn {
+    display: inline-block; padding: 7px 12px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--bg2); color: var(--txt); cursor: pointer; font-size: 11px;
+  }
+  .filebtn:hover { border-color: var(--brand); }
+  #fname { margin-left: 8px; color: var(--txt2); font-size: 11px; }
+  input[type=file] { display: none; }
+  label.row { display: flex; align-items: center; gap: 6px; margin: 9px 0; color: var(--txt); cursor: pointer; }
+  textarea {
+    width: 100%; height: 140px; margin-top: 10px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 10px;
+    border: 1px solid var(--border); border-radius: 6px; padding: 8px; resize: vertical;
+    background: var(--bg2); color: var(--txt);
+  }
+  textarea::placeholder { color: var(--txt2); }
+  input[type=number] {
+    width: 64px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 5px;
+    background: var(--bg2); color: var(--txt);
+  }
+  .btns { display: flex; gap: 8px; margin-top: 12px; }
+  button { flex: 1; padding: 9px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  #go { background: var(--brand); color: var(--on-brand); }
+  #cancel { background: var(--bg2); color: var(--txt); flex: 0 0 80px; border: 1px solid var(--border); }
+  #status { margin-top: 10px; font-size: 11px; min-height: 16px; color: var(--txt2); }
+  .ok { color: #14ae5c !important; } .err { color: #f24822 !important; }
+  .hint { color: var(--txt2); font-size: 10px; }
+</style>
+</head>
+<body>
+  <h1>sb-creator → Figma</h1>
+  <p class="desc">추출기로 만든 <b>scene.json</b>을 파일로 불러오거나 아래에 붙여넣으세요.</p>
+
+  <label class="filebtn" for="file">파일 선택…</label>
+  <span id="fname">선택된 파일 없음</span>
+  <input type="file" id="file" accept="application/json,.json" />
+
+  <textarea id="json" placeholder='{ "schemaVersion": "1.0", "screens": [ ... ] }'></textarea>
+
+  <label class="row">
+    <input type="checkbox" id="pageframe" checked />
+    페이지 프레임(가운데 정렬·여백)
+    <input type="number" id="canvas" value="1440" min="320" step="40" style="width:64px;" /> px
+  </label>
+  <label class="row">
+    <input type="checkbox" id="annotations" />
+    주석 마커(번호 원) 포함 <span class="hint">(기본 OFF=깔끔한 UI)</span>
+  </label>
+  <label class="row">
+    <input type="checkbox" id="descpanel" />
+    설명 패널 + 넘버링 <span class="hint">(Description 표를 화면 옆에 생성)</span>
+  </label>
+  <label class="row">
+    <input type="checkbox" id="autolayout" />
+    Auto Layout 적용 <span class="hint">(실험적 · 기본 OFF=절대배치)</span>
+  </label>
+  <label class="row">
+    <input type="checkbox" id="deviceframe" checked />
+    iPhone 디바이스 프레임 <span class="hint">(모바일 화면에 베젤·아일랜드 적용)</span>
+  </label>
+  <label class="row">
+    화면 간격 <input type="number" id="gap" value="120" min="0" step="20" /> px
+  </label>
+
+  <div class="btns">
+    <button id="go">가져오기</button>
+    <button id="cancel">닫기</button>
+  </div>
+  <div id="status"></div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const status = $('status');
+
+  $('file').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      $('json').value = r.result;
+      $('fname').textContent = f.name;
+      status.textContent = '파일 로드됨'; status.className = 'ok';
+    };
+    r.readAsText(f);
+  });
+
+  $('go').addEventListener('click', () => {
+    const raw = $('json').value.trim();
+    if (!raw) { status.textContent = 'scene.json 내용이 비어 있습니다.'; status.className = 'err'; return; }
+    status.textContent = '생성 중...'; status.className = '';
+    parent.postMessage({ pluginMessage: {
+      type: 'import',
+      scene: raw,
+      autoLayout: $('autolayout').checked,
+      includeAnnotations: $('annotations').checked,
+      pageFrame: $('pageframe').checked,
+      deviceFrame: $('deviceframe').checked,
+      descPanel: $('descpanel').checked,
+      canvasWidth: parseInt($('canvas').value, 10) || 1440,
+      screenGap: parseInt($('gap').value, 10) || 120
+    } }, '*');
+  });
+
+  $('cancel').addEventListener('click', () => {
+    parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+  });
+
+  onmessage = (event) => {
+    const msg = event.data.pluginMessage;
+    if (!msg) return;
+    if (msg.type === 'done') { status.textContent = '완료: ' + msg.count + '개 화면 생성'; status.className = 'ok'; }
+    else if (msg.type === 'error') { status.textContent = '오류: ' + msg.message; status.className = 'err'; }
+  };
+</script>
+</body>
+</html>
